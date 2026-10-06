@@ -1,0 +1,61 @@
+name: Preview
+
+on:
+  pull_request:
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Deploy realtime preview
+        id: realtime
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/realtime
+          command: deploy --env preview
+
+      - name: Deploy web preview to Vercel
+        id: web
+        run: |
+          pnpm dlx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+          pnpm dlx vercel build --token=$VERCEL_TOKEN
+          url=$(pnpm dlx vercel deploy --prebuilt --token=$VERCEL_TOKEN)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_PUBLIC_REALTIME_URL: ${{ vars.PREVIEW_REALTIME_URL }}
+
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const body = [
+              "### Preview",
+              "",
+              `- Web: ${{ steps.web.outputs.url }}`,
+              `- Realtime: ${{ steps.realtime.outputs.deployment-url || vars.PREVIEW_REALTIME_URL }}`,
+            ].join("\n");
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.startsWith("### Preview"));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
