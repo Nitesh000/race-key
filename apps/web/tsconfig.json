@@ -1,0 +1,10 @@
+{
+  "extends": "@race-key/config/tsconfig/next.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts", "*.ts"],
+  "exclude": ["node_modules", ".open-next"]
+}
