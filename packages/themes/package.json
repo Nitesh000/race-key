@@ -1,0 +1,28 @@
+{
+  "name": "@race-key/themes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./themes.css": "./generated/themes.css",
+    "./tailwind.css": "./tailwind.css"
+  },
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@race-key/config": "workspace:*",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.39.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.4"
+  }
+}
