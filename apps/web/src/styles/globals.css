@@ -1,1 +1,47 @@
 @import "tailwindcss";
+@import "@race-key/themes/tailwind.css";
+@import "@race-key/themes/themes.css";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  body {
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-contrast);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
