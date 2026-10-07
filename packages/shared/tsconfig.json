@@ -1,0 +1,4 @@
+{
+  "extends": "@race-key/config/tsconfig/library.json",
+  "include": ["src"]
+}
