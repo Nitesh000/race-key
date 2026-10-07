@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@race-key/themes/tailwind.css";
 @import "@race-key/themes/themes.css";
+@import "./typing.css";
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
