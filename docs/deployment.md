@@ -35,3 +35,14 @@ Protect `main`: require pull requests, require the `CI / check` status, and bloc
 ## Rollback
 
 Run the `Rollback` workflow from the Actions tab and pick `web`, `realtime` or `both`.
+
+## Database
+
+```sh
+pnpm --filter @race-key/db generate   # after editing the schema
+DATABASE_URL=... pnpm --filter @race-key/db migrate
+DATABASE_URL=... pnpm --filter @race-key/db seed
+```
+
+Use a Neon branch per developer for local work. The schema tests run against PGlite, so they
+need no database.
