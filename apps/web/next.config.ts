@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   images: { unoptimized: true },
-  transpilePackages: ["@race-key/themes", "@race-key/shared"],
+  transpilePackages: ["@race-key/themes", "@race-key/shared", "@race-key/passages"],
 };
 
 export default config;

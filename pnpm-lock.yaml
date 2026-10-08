@@ -41,6 +41,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@race-key/passages':
+        specifier: workspace:*
+        version: link:../../packages/passages
       '@race-key/shared':
         specifier: workspace:*
         version: link:../../packages/shared
