@@ -17,5 +17,14 @@ Free-to-play multiplayer typing races on passages from real books.
 
 ```sh
 pnpm install
+cp apps/web/.env.example apps/web/.env.local
+
+# optional local database instead of Neon
+pnpm --filter @race-key/db dev:db
+DATABASE_URL=postgres://postgres@localhost:5433/postgres pnpm --filter @race-key/db migrate
+DATABASE_URL=postgres://postgres@localhost:5433/postgres pnpm --filter @race-key/db seed
+
 pnpm dev
 ```
+
+Practice mode works without a database. Accounts, guests and profiles need `DATABASE_URL`.

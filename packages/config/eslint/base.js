@@ -3,7 +3,15 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/generated/**", "**/.next/**", "**/.wrangler/**", "**/.open-next/**"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/generated/**",
+      "**/.next/**",
+      "**/.wrangler/**",
+      "**/.open-next/**",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

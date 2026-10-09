@@ -8,20 +8,27 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "preview:cf": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
+    "@race-key/db": "workspace:*",
+    "@race-key/passages": "workspace:*",
+    "@race-key/shared": "workspace:*",
+    "@race-key/themes": "workspace:*",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
+    "better-auth": "^1.7.7",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.4",
     "next": "^16.4.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "@race-key/themes": "workspace:*",
-    "clsx": "^2.1.1",
+    "resend": "^6.32.1",
     "tailwind-merge": "^3.3.1",
-    "@race-key/shared": "workspace:*",
-    "@race-key/passages": "workspace:*"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.20.11",

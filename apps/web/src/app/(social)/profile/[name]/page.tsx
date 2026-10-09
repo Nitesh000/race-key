@@ -1,0 +1,59 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Card, CardTitle } from "@/components/ui/card";
+import { getProfileByName, getProfileSummary } from "@/features/profile/queries";
+import { hasDb } from "@/lib/db";
+
+type Props = { params: Promise<{ name: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  return { title: decodeURIComponent((await params).name) };
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <dt className="text-xs tracking-wide text-muted uppercase">{label}</dt>
+      <dd className="font-mono text-2xl font-semibold tabular-nums">{value}</dd>
+    </div>
+  );
+}
+
+export default async function ProfilePage({ params }: Props) {
+  if (!hasDb()) notFound();
+  const name = decodeURIComponent((await params).name);
+  const row = await getProfileByName(name);
+  if (!row) notFound();
+  const { profile } = row;
+  const summary = await getProfileSummary(profile.userId);
+
+  return (
+    <main className="mx-auto max-w-4xl space-y-6 px-4 py-10">
+      <div className="flex items-center gap-4">
+        <div className="grid size-16 place-items-center rounded-2xl bg-surface-2 text-xs text-muted">
+          {profile.equippedSkinId}
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold">{profile.username}</h1>
+          <p className="text-muted">
+            Level {profile.level}
+            {row.isAnonymous && " · guest"} · joined {row.joined.toLocaleDateString("en")}
+          </p>
+        </div>
+      </div>
+      <Card>
+        <CardTitle>Summary</CardTitle>
+        <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+          <Stat label="Avg wpm (last 10)" value={Math.round(summary.last10)} />
+          <Stat label="Avg wpm (all time)" value={Math.round(summary.avgWpm)} />
+          <Stat label="Best wpm" value={Math.round(summary.bestWpm)} />
+          <Stat label="Accuracy" value={`${(summary.accuracy * 100).toFixed(1)}%`} />
+          <Stat label="Races" value={summary.races} />
+          <Stat label="Wins" value={summary.wins} />
+          <Stat label="Level" value={profile.level} />
+          <Stat label="Best streak" value={profile.bestWinStreak} />
+        </dl>
+      </Card>
+    </main>
+  );
+}

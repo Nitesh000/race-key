@@ -7,7 +7,7 @@
   "observability": { "enabled": true },
   "env": {
     "preview": {
-      "name": "race-key-realtime-preview"
-    }
-  }
+      "name": "race-key-realtime-preview",
+    },
+  },
 }

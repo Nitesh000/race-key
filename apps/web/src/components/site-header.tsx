@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { UserMenu } from "@/features/auth/user-menu";
 
 const links = [
   { href: "/race", label: "Race" },
@@ -6,7 +8,7 @@ const links = [
   { href: "/settings", label: "Settings" },
 ];
 
-export function SiteHeader({ right }: { right?: React.ReactNode }) {
+export function SiteHeader() {
   return (
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
@@ -20,7 +22,11 @@ export function SiteHeader({ right }: { right?: React.ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-3">{right}</div>
+        <div className="ml-auto flex items-center gap-3">
+          <Suspense>
+            <UserMenu />
+          </Suspense>
+        </div>
       </div>
     </header>
   );
