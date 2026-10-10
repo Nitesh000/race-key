@@ -58,3 +58,11 @@ export function accuracy(correct: number, errors: number): number {
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
+
+export function consistency(samples: number[]): number | null {
+  const xs = samples.slice(1).filter((x) => x > 0);
+  if (xs.length < 3) return null;
+  const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const sd = Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length);
+  return Math.max(0, Math.min(1, 1 - sd / mean));
+}

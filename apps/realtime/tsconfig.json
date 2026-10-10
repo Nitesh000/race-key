@@ -2,7 +2,7 @@
   "extends": "@race-key/config/tsconfig/base.json",
   "compilerOptions": {
     "lib": ["ES2023"],
-    "types": []
+    "types": ["node"]
   },
   "include": ["worker-configuration.d.ts", "src"]
 }

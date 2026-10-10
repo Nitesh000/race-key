@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
 import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -24,3 +25,5 @@ export function createDb(url: string) {
 }
 
 export type Db = ReturnType<typeof createDb>;
+
+export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;

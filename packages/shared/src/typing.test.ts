@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accuracy, charMatches, plainKey, wpm } from "./typing";
+import { accuracy, charMatches, consistency, plainKey, wpm } from "./typing";
 
 describe("plainKey", () => {
   it.each([
@@ -38,5 +38,13 @@ describe("accuracy", () => {
   it("is correct over total", () => {
     expect(accuracy(95, 5)).toBe(0.95);
     expect(accuracy(0, 0)).toBe(1);
+  });
+});
+
+describe("consistency", () => {
+  it("is 1 for a steady race and lower for an uneven one", () => {
+    expect(consistency([10, 60, 60, 60, 60])).toBe(1);
+    expect(consistency([10, 30, 90, 30, 90])!).toBeLessThan(0.6);
+    expect(consistency([50, 60])).toBeNull();
   });
 });

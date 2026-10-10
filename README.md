@@ -27,4 +27,10 @@ DATABASE_URL=postgres://postgres@localhost:5433/postgres pnpm --filter @race-key
 pnpm dev
 ```
 
-Practice mode works without a database. Accounts, guests and profiles need `DATABASE_URL`.
+`pnpm dev` starts the site on port 3000 and the race server on port 8787. In development both
+sides fall back to the same shared secret, so races work with no extra setup. To save race
+results locally, copy `apps/realtime/.dev.vars.example` to `apps/realtime/.dev.vars` and set
+`DATABASE_URL` there too.
+
+Practice mode works without a database. Accounts, guests, profiles and saved results need
+`DATABASE_URL`.

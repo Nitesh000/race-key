@@ -1,3 +1,4 @@
+import { createDb } from "@race-key/db";
 import { pickRacePassage } from "@race-key/passages/race";
 import {
   PROGRESS_INTERVAL_MS,
@@ -9,6 +10,7 @@ import {
 import { Server, type Connection, type ConnectionContext, type WSMessage } from "partyserver";
 import { z } from "zod";
 import type { Secrets } from "./env";
+import { persistRace } from "./persist";
 import { RaceState, type RoomData } from "./room/state";
 
 type ConnState = { sub: string };
@@ -130,7 +132,18 @@ export class RaceRoom extends Server<Env & Secrets> {
     if (ended) this.onEnded();
   }
 
-  protected onEnded() {}
+  private onEnded() {
+    const room = this.room;
+    const url = this.env.DATABASE_URL;
+    if (!room || !url || room.data.persisted) return;
+    room.data.persisted = true;
+    const data = structuredClone(room.data);
+    this.ctx.waitUntil(
+      persistRace(createDb(url), data).catch((e) => {
+        console.error(`could not save race ${data.raceId}`, e);
+      }),
+    );
+  }
 
   private broadcastTick(now: number) {
     const entries = this.room!.tickEntries(now);

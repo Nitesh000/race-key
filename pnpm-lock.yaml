@@ -20,12 +20,18 @@ importers:
 
   apps/realtime:
     dependencies:
+      '@race-key/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@race-key/passages':
         specifier: workspace:*
         version: link:../../packages/passages
       '@race-key/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@cloudflare/workers-types@5.20261013.1)(@electric-sql/pglite@0.5.9)(@neondatabase/serverless@1.2.0)(kysely@0.29.6)(postgres@3.4.9)
       partyserver:
         specifier: ^0.5.10
         version: 0.5.10(@cloudflare/workers-types@5.20261013.1)
@@ -33,9 +39,15 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.9
+        version: 0.5.9
       '@race-key/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.5
       eslint:
         specifier: ^9.39.0
         version: 9.39.5(jiti@2.7.0)

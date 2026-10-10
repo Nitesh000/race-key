@@ -1,0 +1,87 @@
+import { PGlite } from "@electric-sql/pglite";
+import { passages } from "@race-key/passages";
+import * as s from "@race-key/db/schema";
+import { authors, books } from "@race-key/passages";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/pglite";
+import { migrate } from "drizzle-orm/pglite/migrator";
+import { beforeAll, describe, expect, it } from "vitest";
+import { persistRace } from "./persist";
+import { RaceState } from "./room/state";
+
+const db = drizzle({ client: new PGlite(), schema: s, casing: "snake_case" });
+const passage = passages[0]!;
+
+beforeAll(async () => {
+  await migrate(db, {
+    migrationsFolder: new URL("../../../packages/db/migrations", import.meta.url).pathname,
+  });
+  const book = books.find((b) => b.id === passage.bookId)!;
+  await db.insert(s.authors).values(authors.find((a) => a.id === book.authorId)!);
+  await db.insert(s.books).values(book);
+  await db.insert(s.passages).values({ ...passage, importedAt: new Date(passage.importedAt) });
+  for (const id of ["u1", "u2"]) {
+    await db.insert(s.users).values({ id, name: id, email: `${id}@example.com` });
+    await db.insert(s.profiles).values({ userId: id, username: id });
+  }
+});
+
+function finishedRace(raceId: string) {
+  const room = RaceState.create({
+    roomId: "room",
+    raceId,
+    kind: "private",
+    passage: { id: passage.id, text: passage.text, title: "", author: "" },
+  });
+  for (const id of ["u1", "u2", "guest"]) {
+    room.join(
+      { sub: id, uid: id === "guest" ? null : id, name: id, level: 1, skin: "hatchback" },
+      0,
+    );
+  }
+  room.start("u1", 0);
+  room.tick(5000);
+  room.progress("u1", passage.text.length);
+  room.finish(
+    "u1",
+    { timeMs: 60_000, rawWpm: 70, accuracy: 0.97, errors: 4, samples: [50, 60, 62, 61] },
+    65_000,
+  );
+  room.progress("u2", 40);
+  room.end(70_000);
+  return room.data;
+}
+
+describe("persistRace", () => {
+  it("writes the race, every result and updates profiles once", async () => {
+    const data = finishedRace("race-1");
+    expect(await persistRace(db, data)).toBe(true);
+    expect(await persistRace(db, data)).toBe(false);
+
+    const rows = await db.select().from(s.raceResults).where(eq(s.raceResults.raceId, "race-1"));
+    expect(rows.map((r) => [r.displayName, r.placement, r.finished])).toEqual([
+      ["u1", 1, true],
+      ["u2", 2, false],
+      ["guest", 3, false],
+    ]);
+    expect(rows[0]!.consistency).toBeGreaterThan(0.9);
+    expect(rows[2]!.userId).toBeNull();
+
+    const [p1] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
+    const [p2] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u2"));
+    expect([p1!.races, p1!.wins, p1!.winStreak]).toEqual([1, 1, 1]);
+    expect(p1!.bestWpm).toBeCloseTo(rows[0]!.wpm, 1);
+    expect([p2!.races, p2!.wins, p2!.bestWpm]).toEqual([1, 0, 0]);
+  });
+
+  it("builds a win streak and resets it on a loss", async () => {
+    await persistRace(db, finishedRace("race-2"));
+    let [p1] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
+    expect([p1!.winStreak, p1!.bestWinStreak]).toEqual([2, 2]);
+    const loss = finishedRace("race-3");
+    loss.results!.forEach((r) => (r.finished = r.id !== "u1" ? r.finished : false));
+    await persistRace(db, loss);
+    [p1] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
+    expect([p1!.winStreak, p1!.bestWinStreak]).toEqual([0, 2]);
+  });
+});
