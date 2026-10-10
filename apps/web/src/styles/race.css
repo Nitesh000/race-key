@@ -1,0 +1,36 @@
+.racer,
+.racer-bar {
+  will-change: transform;
+  transition: transform 140ms linear;
+}
+
+.racer-moving .racer-art {
+  animation: racer-bob 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes racer-bob {
+  to {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes strip-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+.strip-pop {
+  animation: strip-pop 200ms ease-out;
+}
+
+[data-motion="reduced"] .racer-moving .racer-art {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .racer-moving .racer-art {
+    animation: none;
+  }
+}

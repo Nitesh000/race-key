@@ -115,6 +115,11 @@ export function useTypingSession({
 
   const focus = useCallback(() => inputRef.current?.focus({ preventScroll: true }), []);
 
+  const start = useCallback((at: number) => {
+    engineRef.current.begin(at);
+    setStatus("running");
+  }, []);
+
   const finish = useCallback(() => {
     const e = engineRef.current;
     const now = e.finishedAt ?? performance.now();
@@ -194,5 +199,6 @@ export function useTypingSession({
     focused,
     focus,
     reset,
+    start,
   };
 }

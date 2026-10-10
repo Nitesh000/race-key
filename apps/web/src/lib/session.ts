@@ -8,8 +8,9 @@ import { getDb } from "./db";
 
 export const getSession = cache(async () => {
   if (!authEnabled()) return null;
+  const h = await headers();
   try {
-    return await getAuth().api.getSession({ headers: await headers() });
+    return await getAuth().api.getSession({ headers: h });
   } catch (e) {
     console.error("session lookup failed", e);
     return null;

@@ -7,10 +7,10 @@ export const authClient = createAuthClient({
   plugins: [anonymousClient()],
 });
 
-export async function ensureSession() {
+export async function ensureSession(): Promise<{ created: boolean }> {
   const { data } = await authClient.getSession();
-  if (data) return data;
+  if (data) return { created: false };
   const res = await authClient.signIn.anonymous();
   if (res.error) throw new Error(res.error.message ?? "could not start a guest session");
-  return (await authClient.getSession()).data;
+  return { created: true };
 }

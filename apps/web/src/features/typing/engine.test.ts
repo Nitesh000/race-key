@@ -68,4 +68,13 @@ describe("TypingEngine", () => {
       ["correct", 50],
     ]);
   });
+
+  it("can start the clock before the first key, as races do", () => {
+    const e = new TypingEngine("ab");
+    e.begin(1000);
+    e.type("a", 1400);
+    e.type("b", 1500);
+    expect(e.elapsed(0)).toBe(500);
+    expect(e.log[0]!.dt).toBe(400);
+  });
 });

@@ -45,6 +45,13 @@ export class TypingEngine {
     return this.pos + this.wrong.length;
   }
 
+  begin(at: number) {
+    if (this.startedAt === null) {
+      this.startedAt = at;
+      this.lastAt = at;
+    }
+  }
+
   private stamp(now: number) {
     if (this.startedAt === null) this.startedAt = now;
     const dt = this.lastAt === null ? 0 : now - this.lastAt;
