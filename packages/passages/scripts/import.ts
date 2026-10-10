@@ -134,6 +134,10 @@ await writeFile(
   JSON.stringify({ authors: authorRows, books: bookRows }, null, 2) + "\n",
 );
 await writeFile(join(dataDir, "passages.json"), lines(passageRows));
+await writeFile(
+  join(dataDir, "race.json"),
+  lines(passageRows.map((p) => [p.id, p.bookId, p.difficulty, p.text])),
+);
 console.log(
   `wrote ${bookRows.length} books, ${authorRows.length} authors, ${passageRows.length} passages`,
 );

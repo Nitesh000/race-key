@@ -183,3 +183,22 @@ describe("front matter", () => {
     expect(extract(text).map((c) => c.chapterNumber)).toEqual([1, 2]);
   });
 });
+
+describe("race data", async () => {
+  const { pickRacePassage, racePassage } = await import("./race");
+
+  it("matches the full passage data", () => {
+    for (const p of passages.slice(0, 200)) {
+      expect(racePassage(p.id)?.text).toBe(p.text);
+    }
+  });
+
+  it("picks within the difficulty band for a speed", () => {
+    const byId = new Map(passages.map((p) => [p.id, p]));
+    for (let i = 0; i < 50; i++) {
+      const p = pickRacePassage({ wpm: 30 });
+      expect(byId.get(p.id)!.difficulty).toBeLessThanOrEqual(4);
+      expect(p.title.length).toBeGreaterThan(0);
+    }
+  });
+});

@@ -2,6 +2,9 @@ import booksData from "../data/books.json" with { type: "json" };
 import passagesData from "../data/passages.json" with { type: "json" };
 import type { Author, Book, Passage } from "./types";
 
+import { difficultyForWpm } from "./difficulty";
+
+export * from "./difficulty";
 export * from "./types";
 
 export const authors = booksData.authors as Author[];
@@ -36,14 +39,6 @@ export function getBook(id: string) {
 
 export function passagesForBook(bookId: string) {
   return byBook.get(bookId) ?? [];
-}
-
-export function difficultyForWpm(wpm: number): [number, number] {
-  if (wpm < 35) return [1, 4];
-  if (wpm < 55) return [2, 6];
-  if (wpm < 75) return [3, 8];
-  if (wpm < 95) return [4, 9];
-  return [5, 10];
 }
 
 export function randomPassage(

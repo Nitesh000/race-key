@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./race": "./src/race.ts",
     "./data/books.json": "./data/books.json",
     "./data/passages.json": "./data/passages.json"
   },
