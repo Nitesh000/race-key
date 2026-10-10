@@ -1,0 +1,2 @@
+REALTIME_SHARED_SECRET=race-key-dev-secret
+DATABASE_URL=
