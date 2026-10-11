@@ -1,12 +1,10 @@
-import { getProfileSummary } from "@/features/profile/queries";
-import { getViewer } from "@/lib/session";
-import { createRoom } from "@/lib/realtime";
+import { raceIdentity } from "@/features/race/player-identity";
+import { createPrivateRoom } from "@/lib/realtime";
 
 export async function POST() {
-  const viewer = await getViewer();
-  const wpm = viewer ? (await getProfileSummary(viewer.id)).last10 || undefined : undefined;
+  const identity = await raceIdentity();
   try {
-    return Response.json(await createRoom({ kind: "private", wpm }));
+    return Response.json(await createPrivateRoom(identity?.wpm || undefined));
   } catch (e) {
     console.error("could not create a room", e);
     return Response.json({ error: "The race server is not reachable." }, { status: 502 });

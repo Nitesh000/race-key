@@ -14,7 +14,10 @@ export default function Home() {
         <Link href="/race" className={buttonClass("primary", "lg")}>
           Start a race
         </Link>
-        <Link href="/practice" className={buttonClass("secondary", "lg")}>
+        <Link href="/race/private" className={buttonClass("secondary", "lg")}>
+          Race a friend
+        </Link>
+        <Link href="/practice" className={buttonClass("ghost", "lg")}>
           Practice
         </Link>
       </div>

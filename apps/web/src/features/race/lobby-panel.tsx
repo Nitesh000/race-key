@@ -16,6 +16,7 @@ export function LobbyPanel({
 }) {
   const [copied, setCopied] = useState(false);
   const isHost = room.hostId === you;
+  const isPublic = room.kind === "public";
 
   async function copy() {
     await navigator.clipboard.writeText(window.location.href);
@@ -27,18 +28,24 @@ export function LobbyPanel({
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CardTitle className="mb-0">Lobby</CardTitle>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={copy}>
-            {copied ? "Link copied" : "Copy invite link"}
-          </Button>
-          {isHost ? (
-            <Button size="sm" onClick={onStart} disabled={room.phase !== "lobby"}>
-              Start race
+        {isPublic ? (
+          <span className="text-sm text-muted">
+            Racers matched to your speed join until the countdown starts.
+          </span>
+        ) : (
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={copy}>
+              {copied ? "Link copied" : "Copy invite link"}
             </Button>
-          ) : (
-            <span className="self-center text-sm text-muted">Waiting for the host to start</span>
-          )}
-        </div>
+            {isHost ? (
+              <Button size="sm" onClick={onStart} disabled={room.phase !== "lobby"}>
+                Start race
+              </Button>
+            ) : (
+              <span className="self-center text-sm text-muted">Waiting for the host to start</span>
+            )}
+          </div>
+        )}
       </div>
       <ul className="grid gap-2 sm:grid-cols-2">
         {room.players.map((p) => (
@@ -51,14 +58,16 @@ export function LobbyPanel({
               {p.id === you && <span className="text-muted"> (you)</span>}
             </span>
             <span className="text-xs text-muted">
-              {p.id === room.hostId ? "host · " : ""}Lv {p.level}
+              {!isPublic && p.id === room.hostId ? "host · " : ""}Lv {p.level}
             </span>
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted">
-        Up to 5 racers. The race starts on its own when the room is full.
-      </p>
+      {!isPublic && (
+        <p className="text-xs text-muted">
+          Up to 5 racers. The race starts on its own when the room is full.
+        </p>
+      )}
     </Card>
   );
 }

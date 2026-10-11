@@ -25,6 +25,8 @@ const hints = {
   done: "",
 } as const;
 
+const publicLobbyHint = "The race starts on its own in a few seconds";
+
 export function RaceRoomView({ host, roomId }: { host: string; roomId: string }) {
   const { room, you, status, error, progress, send, serverNow, toPerf } = useRaceRoom(host, roomId);
   const settings = useSettings();
@@ -154,7 +156,15 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
             )}
           </>
         }
-        passage={<TypingArea text={text} session={session} hint={hints[room.phase]} />}
+        passage={
+          <TypingArea
+            text={text}
+            session={session}
+            hint={
+              room.kind === "public" && room.phase === "lobby" ? publicLobbyHint : hints[room.phase]
+            }
+          />
+        }
         source={
           <p>
             <span className="italic">{room.passage.title}</span> by {room.passage.author}
@@ -163,7 +173,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
         below={
           room.phase === "lobby" ? (
             <LobbyPanel room={room} you={you} onStart={() => send({ t: "start" })} />
-          ) : room.phase === "done" ? (
+          ) : room.phase === "done" || local ? (
             <ResultsPanel
               room={room}
               you={you}

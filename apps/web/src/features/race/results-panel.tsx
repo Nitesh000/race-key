@@ -1,6 +1,6 @@
 "use client";
 
-import type { RoomSnapshot } from "@race-key/shared";
+import type { RaceResult, RoomSnapshot } from "@race-key/shared";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, buttonClass } from "@/components/ui/button";
@@ -28,8 +28,10 @@ export function ResultsPanel({
   onAgain: () => void;
 }) {
   const [source, setSource] = useState<ClientPassage | null>(null);
-  const results = room.results ?? [];
+  const done = room.phase === "done";
+  const results = room.results ?? liveStandings(room);
   const mine = results.find((r) => r.id === you);
+  const isPublic = room.kind === "public";
 
   useEffect(() => {
     let live = true;
@@ -44,7 +46,7 @@ export function ResultsPanel({
   return (
     <div className="space-y-4">
       <Card>
-        <CardTitle>Results</CardTitle>
+        <CardTitle>{done ? "Results" : "Waiting for the others to finish…"}</CardTitle>
         <ol className="divide-y divide-border">
           {results.map((r) => (
             <li
@@ -64,15 +66,15 @@ export function ResultsPanel({
             </li>
           ))}
         </ol>
-        {mine && local && (
+        {local && (
           <div className="mt-5 space-y-4">
             <ResultSummary
               result={{
                 ...local.stats,
-                wpm: mine.wpm,
-                elapsed: mine.timeMs,
-                placement: mine.place,
-                racers: results.length,
+                wpm: mine?.wpm ?? local.stats.wpm,
+                elapsed: mine && !Number.isNaN(mine.timeMs) ? mine.timeMs : local.stats.elapsed,
+                placement: mine?.place,
+                racers: room.players.length,
               }}
             />
             <SpeedChart samples={local.samples} />
@@ -83,13 +85,41 @@ export function ResultsPanel({
           </div>
         )}
         <div className="mt-5 flex gap-2">
-          <Button onClick={onAgain}>Race again</Button>
-          <Link href="/race" className={buttonClass("secondary")}>
-            New room
+          {isPublic ? (
+            <Link href="/race" className={buttonClass()}>
+              Race again
+            </Link>
+          ) : (
+            <>
+              <Button onClick={onAgain} disabled={!done}>
+                Race again
+              </Button>
+              <Link href="/race/private" className={buttonClass("secondary")}>
+                New room
+              </Link>
+            </>
+          )}
+          <Link href="/practice" className={buttonClass("ghost")}>
+            Practice
           </Link>
         </div>
       </Card>
       {source && <SourceCard passage={source} />}
     </div>
   );
+}
+
+function liveStandings(room: RoomSnapshot): RaceResult[] {
+  return room.players
+    .filter((p) => p.place !== null)
+    .sort((a, b) => a.place! - b.place!)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      place: p.place!,
+      finished: true,
+      wpm: p.wpm,
+      accuracy: Number.NaN,
+      timeMs: Number.NaN,
+    }));
 }

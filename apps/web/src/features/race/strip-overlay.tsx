@@ -14,14 +14,22 @@ export function StripOverlay({
 }) {
   const [now, setNow] = useState(serverNow);
 
+  const ticking =
+    room.phase === "countdown" ||
+    room.phase === "racing" ||
+    (room.phase === "lobby" && !!room.autoStartAt);
   useEffect(() => {
-    if (room.phase !== "countdown" && room.phase !== "racing") return;
+    if (!ticking) return;
     const id = setInterval(() => setNow(serverNow()), 100);
     return () => clearInterval(id);
-  }, [room.phase, serverNow]);
+  }, [ticking, serverNow]);
 
   let label: string | null = null;
-  if (room.phase === "lobby") label = "Waiting for the race to start";
+  if (room.phase === "lobby") {
+    label = room.autoStartAt
+      ? `Finding racers · starting in ${Math.max(0, Math.ceil((room.autoStartAt - now) / 1000))} s`
+      : "Waiting for the race to start";
+  }
   if (room.phase === "countdown" && room.startsAt) {
     const left = Math.ceil((room.startsAt - now) / 1000);
     label = left > 0 ? String(left) : "Go!";

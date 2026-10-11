@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { NewRoom } from "@/features/race/new-room";
+import { FindRoom } from "@/features/race/find-room";
 import { SessionGate } from "@/features/race/race-entry";
 import { authEnabled } from "@/lib/auth";
 
@@ -9,7 +9,7 @@ export default function RacePage() {
   return (
     <main>
       <SessionGate authEnabled={authEnabled()}>
-        <NewRoom />
+        <FindRoom kind="public" />
       </SessionGate>
     </main>
   );
