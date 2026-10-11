@@ -17,6 +17,7 @@ import {
   type TickEntry,
   type Ticket,
 } from "@race-key/shared";
+import { finishFlags, maxPlausiblePos } from "../anticheat";
 import { autoStartDelay, botJoinTimes, botLevel } from "../bots/roster";
 import { botTargetWpm, roomBaseline } from "../bots/speed";
 import { planTypist, positionAt, sampleSpeeds, type TypistPlan } from "../bots/typist";
@@ -255,11 +256,17 @@ export class RaceState {
     d.endsAt = d.startsAt + this.length * MS_PER_CHAR_LIMIT;
   }
 
-  progress(id: string, pos: number) {
-    if (this.data.phase !== "racing") return false;
+  progress(id: string, pos: number, now: number) {
+    if (this.data.phase !== "racing" || this.data.startsAt === null) return false;
     const p = this.player(id);
     if (!p || p.bot || p.left || p.finishedAt !== null) return false;
     if (pos > this.length || pos <= p.pos) return false;
+    const limit = maxPlausiblePos(now - this.data.startsAt);
+    if (pos > limit) {
+      flag(p, "speed");
+      pos = Math.max(p.pos, limit);
+      if (pos === p.pos) return false;
+    }
     p.pos = pos;
     return true;
   }
@@ -270,7 +277,9 @@ export class RaceState {
     if (!p || p.bot || p.left || p.finishedAt !== null || p.pos !== this.length) return false;
     const serverMs = now - this.data.startsAt;
     const trusted = stats.timeMs <= serverMs && stats.timeMs >= serverMs - CLIENT_TIME_TOLERANCE_MS;
-    this.markFinished(p, trusted ? stats.timeMs : serverMs, now, stats);
+    const timeMs = trusted ? stats.timeMs : serverMs;
+    for (const f of finishFlags(stats, this.length, timeMs)) flag(p, f);
+    this.markFinished(p, timeMs, now, { ...stats, dts: undefined });
     return true;
   }
 
@@ -507,6 +516,10 @@ export class RaceState {
       })),
     };
   }
+}
+
+function flag(p: Player, reason: string) {
+  if (!p.flags.includes(reason)) p.flags.push(reason);
 }
 
 function expired(p: Player, now: number) {

@@ -101,7 +101,7 @@ export class RaceRoom extends Server<Env & Secrets> {
         this.send(conn, { t: "pong", at: msg.at, now });
         return;
       case "progress":
-        this.room.progress(sub, msg.pos);
+        this.room.progress(sub, msg.pos, now);
         return;
       case "finish":
         if (this.room.finish(sub, msg.stats, now)) this.changed();

@@ -63,6 +63,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
           accuracy: s.accuracy,
           errors: s.errors,
           samples: e.samples.slice(0, 1200),
+          dts: e.log.slice(1, 3001).map((k) => Math.round(k.dt)),
         },
       });
       setLocal({ stats: s, samples: [...e.samples], missed: new Set(e.missed) });

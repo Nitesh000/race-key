@@ -49,14 +49,18 @@ export async function persistRace(db: AnyDb, data: RoomData) {
         botOpponents: botPlayers - (bot ? 1 : 0),
         samples,
         consistency: consistency(samples),
+        flagged: !!p?.flags.length,
+        flagReason: p?.flags.length ? p.flags.join(",") : null,
       };
     }),
   );
 
   for (const r of data.results) {
-    const uid = players.get(r.id)?.uid;
+    const p = players.get(r.id);
+    const uid = p?.uid;
     if (!uid) continue;
-    const won = r.place === 1 && r.finished && data.results.length > 1;
+    const clean = r.finished && !p.flags.length;
+    const won = r.place === 1 && clean && data.results.length > 1;
     await db
       .update(profiles)
       .set({
@@ -66,9 +70,7 @@ export async function persistRace(db: AnyDb, data: RoomData) {
         bestWinStreak: won
           ? sql`greatest(${profiles.bestWinStreak}, ${profiles.winStreak} + 1)`
           : sql`${profiles.bestWinStreak}`,
-        bestWpm: r.finished
-          ? sql`greatest(${profiles.bestWpm}, ${r.wpm})`
-          : sql`${profiles.bestWpm}`,
+        bestWpm: clean ? sql`greatest(${profiles.bestWpm}, ${r.wpm})` : sql`${profiles.bestWpm}`,
         lastSeenAt: new Date(),
       })
       .where(eq(profiles.userId, uid));

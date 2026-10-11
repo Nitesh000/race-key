@@ -10,6 +10,8 @@ import { persistRace } from "./persist";
 import { mulberry32 } from "@race-key/shared";
 import { RaceState } from "./room/state";
 
+const humanGaps = (n: number) => Array.from({ length: n }, (_, i) => 90 + ((i * 37) % 140));
+
 const db = drizzle({ client: new PGlite(), schema: s, casing: "snake_case" });
 const passage = passages[0]!;
 
@@ -43,13 +45,20 @@ function finishedRace(raceId: string) {
   }
   room.start("u1", 0);
   room.tick(5000);
-  room.progress("u1", passage.text.length);
+  room.progress("u1", passage.text.length, 65_000);
   room.finish(
     "u1",
-    { timeMs: 60_000, rawWpm: 70, accuracy: 0.97, errors: 4, samples: [50, 60, 62, 61] },
+    {
+      timeMs: 60_000,
+      rawWpm: 70,
+      accuracy: 0.97,
+      errors: 4,
+      samples: [50, 60, 62, 61],
+      dts: humanGaps(passage.text.length),
+    },
     65_000,
   );
-  room.progress("u2", 40);
+  room.progress("u2", 40, 65_000);
   room.end(70_000);
   return room.data;
 }
@@ -103,10 +112,17 @@ describe("persistRace", () => {
     room.tick(room.data.autoStartAt!);
     const start = room.data.startsAt!;
     room.tick(start);
-    room.progress("u2", passage.text.length);
+    room.progress("u2", passage.text.length, start + 30_000);
     room.finish(
       "u2",
-      { timeMs: 30_000, rawWpm: 70, accuracy: 1, errors: 0, samples: [60, 60, 60] },
+      {
+        timeMs: 30_000,
+        rawWpm: 70,
+        accuracy: 1,
+        errors: 0,
+        samples: [60, 60, 60],
+        dts: humanGaps(passage.text.length),
+      },
       start + 30_000,
     );
     room.tick(start + 30_100);
@@ -119,5 +135,22 @@ describe("persistRace", () => {
     expect([human.isBot, human.realOpponents, human.botOpponents]).toEqual([false, 0, 4]);
     expect(rows.filter((r) => r.isBot)).toHaveLength(4);
     expect(rows.filter((r) => r.isBot).every((r) => r.userId === null)).toBe(true);
+  });
+
+  it("saves flags and keeps flagged races out of best speed and wins", async () => {
+    const data = finishedRace("race-flagged");
+    data.players.find((p) => p.id === "u1")!.flags.push("timing");
+    const [before] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
+    data.results!.find((r) => r.id === "u1")!.wpm = 999;
+    await persistRace(db, data);
+    const [row] = await db
+      .select()
+      .from(s.raceResults)
+      .where(eq(s.raceResults.raceId, "race-flagged"));
+    expect([row!.flagged, row!.flagReason]).toEqual([true, "timing"]);
+    const [after] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
+    expect(after!.bestWpm).toBe(before!.bestWpm);
+    expect(after!.wins).toBe(before!.wins);
+    expect(after!.races).toBe(before!.races + 1);
   });
 });
