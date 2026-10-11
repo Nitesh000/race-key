@@ -7,15 +7,24 @@
   "observability": { "enabled": true },
   "vars": { "ENVIRONMENT": "production" },
   "durable_objects": {
-    "bindings": [{ "name": "RaceRoom", "class_name": "RaceRoom" }],
+    "bindings": [
+      { "name": "RaceRoom", "class_name": "RaceRoom" },
+      { "name": "Matchmaker", "class_name": "Matchmaker" },
+    ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RaceRoom"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RaceRoom"] },
+    { "tag": "v2", "new_sqlite_classes": ["Matchmaker"] },
+  ],
   "env": {
     "preview": {
       "name": "race-key-realtime-preview",
       "vars": { "ENVIRONMENT": "preview" },
       "durable_objects": {
-        "bindings": [{ "name": "RaceRoom", "class_name": "RaceRoom" }],
+        "bindings": [
+          { "name": "RaceRoom", "class_name": "RaceRoom" },
+          { "name": "Matchmaker", "class_name": "Matchmaker" },
+        ],
       },
     },
   },
