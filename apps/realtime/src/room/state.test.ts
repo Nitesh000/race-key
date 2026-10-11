@@ -1,4 +1,4 @@
-import { COUNTDOWN_MS, MAX_PLAYERS, RECONNECT_MS } from "@race-key/shared";
+import { COUNTDOWN_MS, MAX_PLAYERS, RECONNECT_MS, mulberry32 } from "@race-key/shared";
 import { describe, expect, it } from "vitest";
 import { RaceState } from "./state";
 
@@ -6,11 +6,11 @@ const passage = { id: "p1", text: "the quick brown fox", title: "T", author: "A"
 const len = passage.text.length;
 
 function ticket(sub: string) {
-  return { sub, uid: sub, name: sub, level: 1, skin: "hatchback" };
+  return { sub, uid: sub, name: sub, level: 1, skin: "hatchback", wpm: 60 };
 }
 
 function room() {
-  return RaceState.create({ roomId: "r", raceId: "race1", kind: "private", passage });
+  return RaceState.create({ roomId: "r", raceId: "race1", kind: "private", passage, now: 0 });
 }
 
 function racing(players = ["a", "b"]) {
@@ -29,7 +29,7 @@ const stats = (timeMs: number) => ({
   samples: [60],
 });
 
-describe("RaceState", () => {
+describe("private rooms", () => {
   it("makes the first player host and only lets the host start", () => {
     const s = room();
     s.join(ticket("a"), 0);
@@ -137,5 +137,108 @@ describe("RaceState", () => {
     expect(s.phase).toBe("lobby");
     expect(s.data.players.map((p) => [p.id, p.pos])).toEqual([["a", 0]]);
     expect(s.data.raceId).toBe("race2");
+  });
+});
+
+const longText = "It was the best of times, it was the worst of times, it was the age of wisdom.";
+
+function publicRoom(seed = 1) {
+  return RaceState.create(
+    {
+      roomId: "pub",
+      raceId: "race-pub",
+      kind: "public",
+      passage: { ...passage, text: longText },
+      now: 0,
+    },
+    mulberry32(seed),
+  );
+}
+
+describe("public rooms", () => {
+  it("has no host, cannot be started by hand and starts on its own after 12 to 13 s", () => {
+    const s = publicRoom();
+    expect(s.reserve("a", 0)).toBe(true);
+    s.join(ticket("a"), 100);
+    expect(s.data.hostId).toBeNull();
+    expect(s.start("a", 200)).toBe(false);
+    const at = s.data.autoStartAt!;
+    expect(at).toBeGreaterThanOrEqual(12_000);
+    expect(at).toBeLessThanOrEqual(13_000);
+    s.tick(at - 1);
+    expect(s.phase).toBe("lobby");
+    s.tick(at);
+    expect(s.phase).toBe("countdown");
+  });
+
+  it("lets bots join one by one during the wait and fills every seat by the start", () => {
+    const s = publicRoom(2);
+    s.reserve("a", 0);
+    s.join(ticket("a"), 0);
+    const counts: number[] = [];
+    for (let t = 0; t <= s.data.autoStartAt!; t += 100) {
+      s.tick(t);
+      if (s.phase === "lobby") counts.push(s.bots().length);
+    }
+    expect(new Set(counts).size).toBeGreaterThan(2);
+    expect(s.data.players).toHaveLength(MAX_PLAYERS);
+    expect(new Set(s.data.players.map((p) => p.name)).size).toBe(MAX_PLAYERS);
+  });
+
+  it("keeps reserved seats away from bots", () => {
+    const s = publicRoom(3);
+    s.reserve("a", 0);
+    s.join(ticket("a"), 0);
+    s.tick(11_000);
+    const seated = s.data.players.length;
+    for (let i = seated; i < MAX_PLAYERS; i++) expect(s.reserve(`r${i}`, 11_000 - 1)).toBe(true);
+    s.tick(11_900);
+    expect(s.bots().length).toBe(seated - 1);
+    expect(s.reserve("late", 11_900)).toBe(false);
+  });
+
+  it("gives bots speeds around the real players and moves them during the race", () => {
+    const s = publicRoom(4);
+    s.reserve("a", 0);
+    s.join(ticket("a"), 0);
+    s.tick(s.data.autoStartAt!);
+    for (const b of s.bots()) {
+      expect(b.bot!.target).toBeGreaterThanOrEqual(50);
+      expect(b.bot!.target).toBeLessThanOrEqual(70);
+    }
+    const start = s.data.startsAt!;
+    s.tick(start);
+    s.tick(start + 4000);
+    expect(s.bots().every((b) => b.pos > 0)).toBe(true);
+  });
+
+  it("ranks everyone by finish time once the last real player is done", () => {
+    const s = publicRoom(5);
+    s.reserve("a", 0);
+    s.join(ticket("a"), 0);
+    s.tick(s.data.autoStartAt!);
+    const start = s.data.startsAt!;
+    s.tick(start);
+    s.progress("a", longText.length);
+    s.finish("a", stats(10_000), start + 10_000);
+    const r = s.tick(start + 10_050);
+    expect(r.ended).toBe(true);
+    const results = s.data.results!;
+    expect(results).toHaveLength(MAX_PLAYERS);
+    expect(results.every((x) => x.finished)).toBe(true);
+    const times = results.map((x) => x.timeMs);
+    expect([...times].sort((a, b) => a - b)).toEqual(times);
+  });
+
+  it("closes when the only real player leaves the lobby", () => {
+    const s = publicRoom(6);
+    s.reserve("a", 0);
+    s.join(ticket("a"), 0);
+    s.tick(3000);
+    s.disconnect("a", 3000);
+    s.tick(3000 + RECONNECT_MS);
+    expect(s.data.closed).toBe(true);
+    expect(s.data.players).toHaveLength(0);
+    expect(s.join(ticket("b"), 3000 + RECONNECT_MS)).toMatchObject({ ok: false, code: "closed" });
   });
 });

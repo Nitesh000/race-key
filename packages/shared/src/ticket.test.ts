@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { signTicket, TICKET_TTL_MS, verifyTicket } from "./ticket";
 
-const player = { sub: "u1", uid: "u1", name: "BraveOtter", level: 3, skin: "hatchback" };
+const player = { sub: "u1", uid: "u1", name: "BraveOtter", level: 3, skin: "hatchback", wpm: 62 };
 
 describe("tickets", () => {
   it("round trips", async () => {

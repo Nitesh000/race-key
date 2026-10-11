@@ -6,7 +6,9 @@ import type { RoomData } from "./room/state";
 export async function persistRace(db: AnyDb, data: RoomData) {
   if (!data.results || data.startsAt === null) return false;
   const players = new Map(data.players.map((p) => [p.id, p]));
-  const realPlayers = data.results.length;
+  const isBot = (id: string) => !!players.get(id)?.bot;
+  const realPlayers = data.results.filter((r) => !isBot(r.id)).length;
+  const botPlayers = data.results.length - realPlayers;
 
   const inserted = await db
     .insert(races)
@@ -15,7 +17,7 @@ export async function persistRace(db: AnyDb, data: RoomData) {
       passageId: data.passage.id,
       kind: data.kind,
       realPlayers,
-      botPlayers: 0,
+      botPlayers,
       startedAt: new Date(data.startsAt),
       finishedAt: new Date(data.endedAt ?? Date.now()),
     })
@@ -26,11 +28,12 @@ export async function persistRace(db: AnyDb, data: RoomData) {
   await db.insert(raceResults).values(
     data.results.map((r) => {
       const p = players.get(r.id);
+      const bot = isBot(r.id);
       const samples = p?.stats?.samples ?? [];
       return {
         raceId: data.raceId,
         userId: p?.uid ?? null,
-        isBot: false,
+        isBot: bot,
         displayName: r.name,
         passageId: data.passage.id,
         placement: r.place,
@@ -41,9 +44,9 @@ export async function persistRace(db: AnyDb, data: RoomData) {
         timeMs: r.timeMs,
         chars: p?.pos ?? 0,
         errors: p?.stats?.errors ?? 0,
-        roomSize: realPlayers,
-        realOpponents: realPlayers - 1,
-        botOpponents: 0,
+        roomSize: data.results!.length,
+        realOpponents: realPlayers - (bot ? 0 : 1),
+        botOpponents: botPlayers - (bot ? 1 : 0),
         samples,
         consistency: consistency(samples),
       };
@@ -53,7 +56,7 @@ export async function persistRace(db: AnyDb, data: RoomData) {
   for (const r of data.results) {
     const uid = players.get(r.id)?.uid;
     if (!uid) continue;
-    const won = r.place === 1 && r.finished && realPlayers > 1;
+    const won = r.place === 1 && r.finished && data.results.length > 1;
     await db
       .update(profiles)
       .set({

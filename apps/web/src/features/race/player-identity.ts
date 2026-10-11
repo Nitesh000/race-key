@@ -1,6 +1,7 @@
 import "server-only";
 import { randomName, type Ticket } from "@race-key/shared";
 import { cookies } from "next/headers";
+import { getProfileSummary } from "@/features/profile/queries";
 import { authEnabled } from "@/lib/auth";
 import { getViewer } from "@/lib/session";
 
@@ -13,12 +14,14 @@ export async function raceIdentity(): Promise<Identity | null> {
   if (authEnabled()) {
     const viewer = await getViewer();
     if (!viewer) return null;
+    const { last10 } = await getProfileSummary(viewer.id);
     return {
       sub: viewer.id,
       uid: viewer.id,
       name: viewer.profile.username,
       level: viewer.profile.level,
       skin: viewer.profile.equippedSkinId,
+      wpm: Math.round(last10),
     };
   }
   const jar = await cookies();
@@ -36,5 +39,5 @@ export async function raceIdentity(): Promise<Identity | null> {
     jar.set(GUEST_ID, sub, opts);
     jar.set(GUEST_NAME, name, opts);
   }
-  return { sub, uid: null, name, level: 1, skin: "hatchback" };
+  return { sub, uid: null, name, level: 1, skin: "hatchback", wpm: 0 };
 }

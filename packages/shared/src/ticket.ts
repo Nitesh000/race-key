@@ -6,6 +6,7 @@ export const ticketSchema = z.object({
   name: z.string().min(1).max(32),
   level: z.number().int().min(1),
   skin: z.string().max(40),
+  wpm: z.number().nonnegative().max(400),
   exp: z.number().int(),
 });
 export type Ticket = z.infer<typeof ticketSchema>;

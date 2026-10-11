@@ -7,6 +7,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { beforeAll, describe, expect, it } from "vitest";
 import { persistRace } from "./persist";
+import { mulberry32 } from "@race-key/shared";
 import { RaceState } from "./room/state";
 
 const db = drizzle({ client: new PGlite(), schema: s, casing: "snake_case" });
@@ -32,10 +33,11 @@ function finishedRace(raceId: string) {
     raceId,
     kind: "private",
     passage: { id: passage.id, text: passage.text, title: "", author: "" },
+    now: 0,
   });
   for (const id of ["u1", "u2", "guest"]) {
     room.join(
-      { sub: id, uid: id === "guest" ? null : id, name: id, level: 1, skin: "hatchback" },
+      { sub: id, uid: id === "guest" ? null : id, name: id, level: 1, skin: "hatchback", wpm: 50 },
       0,
     );
   }
@@ -83,5 +85,39 @@ describe("persistRace", () => {
     await persistRace(db, loss);
     [p1] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
     expect([p1!.winStreak, p1!.bestWinStreak]).toEqual([0, 2]);
+  });
+
+  it("marks bot rows and counts real and bot opponents", async () => {
+    const room = RaceState.create(
+      {
+        roomId: "pub",
+        raceId: "race-bots",
+        kind: "public",
+        passage: { id: passage.id, text: passage.text, title: "", author: "" },
+        now: 0,
+      },
+      mulberry32(1),
+    );
+    room.reserve("u2", 0);
+    room.join({ sub: "u2", uid: "u2", name: "u2", level: 1, skin: "hatchback", wpm: 50 }, 0);
+    room.tick(room.data.autoStartAt!);
+    const start = room.data.startsAt!;
+    room.tick(start);
+    room.progress("u2", passage.text.length);
+    room.finish(
+      "u2",
+      { timeMs: 30_000, rawWpm: 70, accuracy: 1, errors: 0, samples: [60, 60, 60] },
+      start + 30_000,
+    );
+    room.tick(start + 30_100);
+    await persistRace(db, room.data);
+
+    const [race] = await db.select().from(s.races).where(eq(s.races.id, "race-bots"));
+    expect([race!.kind, race!.realPlayers, race!.botPlayers]).toEqual(["public", 1, 4]);
+    const rows = await db.select().from(s.raceResults).where(eq(s.raceResults.raceId, "race-bots"));
+    const human = rows.find((r) => r.userId === "u2")!;
+    expect([human.isBot, human.realOpponents, human.botOpponents]).toEqual([false, 0, 4]);
+    expect(rows.filter((r) => r.isBot)).toHaveLength(4);
+    expect(rows.filter((r) => r.isBot).every((r) => r.userId === null)).toBe(true);
   });
 });

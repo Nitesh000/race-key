@@ -15,6 +15,7 @@ export const finishStatsSchema = z.object({
   accuracy: z.number().min(0).max(1),
   errors: z.number().int().nonnegative(),
   samples: z.array(z.number().nonnegative().max(1000)).max(1200),
+  dts: z.array(z.number().int().nonnegative().max(60_000)).max(3000).optional(),
 });
 export type FinishStats = z.infer<typeof finishStatsSchema>;
 
@@ -56,10 +57,14 @@ export type RaceResult = {
   timeMs: number;
 };
 
+export type RoomKind = "public" | "private";
+
 export type RoomSnapshot = {
   roomId: string;
   raceId: string;
+  kind: RoomKind;
   phase: Phase;
+  autoStartAt: number | null;
   hostId: string | null;
   passage: RacePassage;
   players: PublicPlayer[];

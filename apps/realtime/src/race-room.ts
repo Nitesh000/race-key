@@ -22,6 +22,8 @@ const initSchema = z.object({
   wpm: z.number().positive().optional(),
 });
 
+const reserveSchema = z.object({ sub: z.string().min(1) });
+
 export class RaceRoom extends Server<Env & Secrets> {
   static override options = { hibernate: true };
 
@@ -37,7 +39,10 @@ export class RaceRoom extends Server<Env & Secrets> {
 
   override async onRequest(req: Request) {
     const url = new URL(req.url);
-    if (req.method === "POST" && url.pathname.endsWith("/init")) {
+    if (req.method !== "POST") return new Response("not found", { status: 404 });
+    const now = Date.now();
+
+    if (url.pathname.endsWith("/init")) {
       if (this.room) return Response.json({ error: "exists" }, { status: 409 });
       const body = initSchema.parse(await req.json());
       this.room = RaceState.create({
@@ -45,10 +50,23 @@ export class RaceRoom extends Server<Env & Secrets> {
         raceId: crypto.randomUUID(),
         kind: body.kind,
         passage: pickRacePassage({ wpm: body.wpm }),
+        now,
       });
       await this.save();
-      return Response.json({ roomId: this.name });
+      this.schedule();
+      return Response.json({ roomId: this.name, autoStartAt: this.room.data.autoStartAt });
     }
+
+    if (url.pathname.endsWith("/reserve")) {
+      const { sub } = reserveSchema.parse(await req.json());
+      const ok = !!this.room?.reserve(sub, now);
+      if (ok) {
+        await this.save();
+        this.schedule();
+      }
+      return Response.json({ ok, players: this.room?.data.players.length ?? 0 });
+    }
+
     return new Response("not found", { status: 404 });
   }
 
