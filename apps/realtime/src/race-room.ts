@@ -201,9 +201,17 @@ export class RaceRoom extends Server<Env & Secrets> {
     room.data.persisted = true;
     const data = structuredClone(room.data);
     this.ctx.waitUntil(
-      persistRace(createDb(url), data).catch((e) => {
-        console.error(`could not save race ${data.raceId}`, e);
-      }),
+      persistRace(createDb(url), data)
+        .then((rewards) => {
+          if (!rewards) return;
+          for (const conn of this.getConnections<ConnState>()) {
+            const r = conn.state && rewards.get(conn.state.sub);
+            if (r) this.send(conn, { t: "rewards", raceId: data.raceId, r });
+          }
+        })
+        .catch((e) => {
+          console.error(`could not save race ${data.raceId}`, e);
+        }),
     );
   }
 

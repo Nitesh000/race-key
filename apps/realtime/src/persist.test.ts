@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { beforeAll, describe, expect, it } from "vitest";
+import { seedCatalog } from "@race-key/db";
 import { persistRace } from "./persist";
 import { mulberry32 } from "@race-key/shared";
 import { RaceState } from "./room/state";
@@ -23,6 +24,7 @@ beforeAll(async () => {
   await db.insert(s.authors).values(authors.find((a) => a.id === book.authorId)!);
   await db.insert(s.books).values(book);
   await db.insert(s.passages).values({ ...passage, importedAt: new Date(passage.importedAt) });
+  await seedCatalog(db);
   for (const id of ["u1", "u2"]) {
     await db.insert(s.users).values({ id, name: id, email: `${id}@example.com` });
     await db.insert(s.profiles).values({ userId: id, username: id });
@@ -66,10 +68,14 @@ function finishedRace(raceId: string) {
 describe("persistRace", () => {
   it("writes the race, every result and updates profiles once", async () => {
     const data = finishedRace("race-1");
-    expect(await persistRace(db, data)).toBe(true);
-    expect(await persistRace(db, data)).toBe(false);
+    expect(await persistRace(db, data)).not.toBeNull();
+    expect(await persistRace(db, data)).toBeNull();
 
-    const rows = await db.select().from(s.raceResults).where(eq(s.raceResults.raceId, "race-1"));
+    const rows = await db
+      .select()
+      .from(s.raceResults)
+      .where(eq(s.raceResults.raceId, "race-1"))
+      .orderBy(s.raceResults.placement);
     expect(rows.map((r) => [r.displayName, r.placement, r.finished])).toEqual([
       ["u1", 1, true],
       ["u2", 2, false],
@@ -146,11 +152,54 @@ describe("persistRace", () => {
     const [row] = await db
       .select()
       .from(s.raceResults)
-      .where(eq(s.raceResults.raceId, "race-flagged"));
+      .where(eq(s.raceResults.raceId, "race-flagged"))
+      .orderBy(s.raceResults.placement);
     expect([row!.flagged, row!.flagReason]).toEqual([true, "timing"]);
     const [after] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "u1"));
     expect(after!.bestWpm).toBe(before!.bestWpm);
     expect(after!.wins).toBe(before!.wins);
     expect(after!.races).toBe(before!.races + 1);
+  });
+
+  it("pays coins and xp, the daily bonus once, keeps the ledger in step and unlocks achievements", async () => {
+    await db.insert(s.users).values({ id: "r1", name: "r1", email: "r1@example.com" });
+    await db.insert(s.profiles).values({ userId: "r1", username: "r1" });
+    const race = (raceId: string) => {
+      const data = finishedRace(raceId);
+      for (const p of data.players) if (p.id === "u1") Object.assign(p, { uid: "r1" });
+      return data;
+    };
+    const first = (await persistRace(db, race("reward-1")))!.get("u1")!;
+    expect(first.daily).toBe(true);
+    expect(first.achievements).toEqual(["first-race"]);
+    expect(first.coins).toBeGreaterThan(50 + 50);
+
+    const second = (await persistRace(db, race("reward-2")))!.get("u1")!;
+    expect(second.daily).toBe(false);
+    expect(second.achievements).toEqual([]);
+
+    const [profile] = await db.select().from(s.profiles).where(eq(s.profiles.userId, "r1"));
+    const ledger = await db
+      .select()
+      .from(s.coinLedger)
+      .where(eq(s.coinLedger.userId, "r1"))
+      .orderBy(s.coinLedger.id);
+    expect(ledger.reduce((a, l) => a + l.delta, 0)).toBe(profile!.coins);
+    expect(ledger.at(-1)!.balance).toBe(profile!.coins);
+    expect(ledger.map((l) => l.reason)).toEqual([
+      "race",
+      "daily-bonus",
+      "achievement:first-race",
+      "race",
+    ]);
+    expect(profile!.xp).toBe(first.xp + second.xp);
+    expect(second.balance).toBe(profile!.coins);
+  });
+
+  it("pays a race against only bots a quarter", async () => {
+    const rows = await db.select().from(s.raceResults).where(eq(s.raceResults.raceId, "race-bots"));
+    const human = rows.find((r) => r.userId === "u2")!;
+    expect(human.coinsEarned).toBeGreaterThan(0);
+    expect(human.coinsEarned).toBeLessThan(15);
   });
 });

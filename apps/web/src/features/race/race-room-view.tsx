@@ -41,6 +41,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
     chat,
     reported,
     emojis,
+    rewards,
     send,
     serverNow,
     toPerf,
@@ -225,6 +226,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
               room={room}
               you={you}
               local={local}
+              rewards={rewards}
               chat={room.phase === "done" ? chatBox : null}
               onAgain={() => send({ t: "again" })}
             />

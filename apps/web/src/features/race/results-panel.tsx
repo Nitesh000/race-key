@@ -1,6 +1,6 @@
 "use client";
 
-import type { RaceResult, RoomSnapshot } from "@race-key/shared";
+import type { RaceResult, RewardSummary, RoomSnapshot } from "@race-key/shared";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, buttonClass } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { SourceCard } from "@/features/passages/source-card";
 import type { ClientPassage } from "@/features/passages/types";
 import { MistakesView } from "@/features/results/mistakes-view";
+import { RewardsCard } from "@/features/rewards/rewards-card";
 import { ResultSummary } from "@/features/results/result-summary";
 import { SpeedChart } from "@/features/results/speed-chart";
 import { formatTime } from "@/features/typing/live-stats";
@@ -20,12 +21,14 @@ export function ResultsPanel({
   room,
   you,
   local,
+  rewards,
   chat,
   onAgain,
 }: {
   room: RoomSnapshot;
   you: string | null;
   local: LocalFinish | null;
+  rewards: RewardSummary | null;
   chat: React.ReactNode;
   onAgain: () => void;
 }) {
@@ -70,6 +73,7 @@ export function ResultsPanel({
         </ol>
         {local && (
           <div className="mt-5 space-y-4">
+            {rewards && <RewardsCard rewards={rewards} />}
             <ResultSummary
               result={{
                 ...local.stats,

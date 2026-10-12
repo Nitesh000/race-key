@@ -1,3 +1,4 @@
+import { levelProgress } from "@race-key/shared";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ export default async function ProfilePage({ params }: Props) {
   if (!row) notFound();
   const { profile } = row;
   const summary = await getProfileSummary(profile.userId);
+  const progress = levelProgress(profile.xp);
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-10">
@@ -38,6 +40,21 @@ export default async function ProfilePage({ params }: Props) {
           <p className="text-muted">
             Level {profile.level}
             {row.isAnonymous && " · guest"} · joined {row.joined.toLocaleDateString("en")}
+          </p>
+          <div
+            className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-surface-2"
+            role="progressbar"
+            aria-label="Progress to next level"
+            aria-valuenow={progress.into}
+            aria-valuemax={progress.needed}
+          >
+            <div
+              className="h-full bg-accent"
+              style={{ width: `${(progress.into / progress.needed) * 100}%` }}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            {progress.into} / {progress.needed} xp to level {progress.level + 1}
           </p>
         </div>
       </div>

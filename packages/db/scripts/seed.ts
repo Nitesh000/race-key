@@ -2,6 +2,7 @@ import { authors, books, passages } from "@race-key/passages";
 import { themes } from "@race-key/themes";
 import { sql } from "drizzle-orm";
 import * as s from "../src/schema";
+import { seedCatalog } from "../src/catalog";
 import { nodeDb } from "./client";
 
 const { db, client } = nodeDb();
@@ -58,5 +59,9 @@ await db
     },
   });
 
+await seedCatalog(db);
+
 await client.end();
-console.log(`seeded ${authors.length} authors, ${books.length} books, ${passages.length} passages`);
+console.log(
+  `seeded ${authors.length} authors, ${books.length} books, ${passages.length} passages, skins and achievements`,
+);

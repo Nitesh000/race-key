@@ -4,6 +4,7 @@ import {
   defaultLoadout,
   type ChatMessage,
   type ClientMessage,
+  type RewardSummary,
   type RoomSnapshot,
 } from "@race-key/shared";
 import { getSettings } from "@/features/settings/store";
@@ -22,6 +23,7 @@ export function useRaceRoom(host: string, roomId: string) {
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [reported, setReported] = useState<Set<string>>(new Set());
   const [emojis, setEmojis] = useState<string[]>(defaultLoadout);
+  const [rewards, setRewards] = useState<{ raceId: string; r: RewardSummary } | null>(null);
   const progress = useRef(new ProgressStore()).current;
   const taunts = useRef(new TauntStore()).current;
   const connRef = useRef<RaceConnection | null>(null);
@@ -48,6 +50,10 @@ export function useRaceRoom(host: string, roomId: string) {
         }
         if (msg.t === "chat") {
           setChat((c) => [...c.slice(-49), msg.m]);
+          return;
+        }
+        if (msg.t === "rewards") {
+          setRewards({ raceId: msg.raceId, r: msg.r });
           return;
         }
         if (msg.t === "reported") {
@@ -89,6 +95,7 @@ export function useRaceRoom(host: string, roomId: string) {
     chat,
     reported,
     emojis,
+    rewards: rewards && rewards.raceId === room?.raceId ? rewards.r : null,
     send: (msg: ClientMessage) => connRef.current?.send(msg),
     serverNow: () => connRef.current?.serverNow() ?? Date.now(),
     toPerf: (t: number) => connRef.current?.toPerf(t) ?? performance.now(),

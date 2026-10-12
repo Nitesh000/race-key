@@ -81,6 +81,17 @@ export type RoomSnapshot = {
 
 export type TickEntry = [id: string, pos: number, wpm: number];
 
+export type RewardSummary = {
+  coins: number;
+  xp: number;
+  multiplier: number;
+  daily: boolean;
+  level: number;
+  leveledUp: boolean;
+  balance: number;
+  achievements: string[];
+};
+
 export type ChatMessage = { id: string; from: string; name: string; text: string; at: number };
 
 export type ServerMessage =
@@ -97,6 +108,7 @@ export type ServerMessage =
   | { t: "taunt"; from: string; emoji: string }
   | { t: "chat"; m: ChatMessage }
   | { t: "reported"; id: string }
+  | { t: "rewards"; raceId: string; r: RewardSummary }
   | { t: "pong"; at: number; now: number }
   | { t: "error"; code: string; message: string };
 

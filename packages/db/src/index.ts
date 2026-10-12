@@ -6,6 +6,7 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 export { schema };
+export { seedCatalog } from "./catalog";
 export * from "./schema";
 
 function isLocal(url: string) {

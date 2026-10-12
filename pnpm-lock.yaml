@@ -202,6 +202,9 @@ importers:
       '@neondatabase/serverless':
         specifier: ^1.2.0
         version: 1.2.0
+      '@race-key/shared':
+        specifier: workspace:*
+        version: link:../shared
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@cloudflare/workers-types@5.20261013.1)(@electric-sql/pglite@0.5.9)(@neondatabase/serverless@1.2.0)(kysely@0.29.6)(postgres@3.4.9)
