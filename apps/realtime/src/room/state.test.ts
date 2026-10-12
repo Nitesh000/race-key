@@ -276,3 +276,40 @@ describe("public rooms", () => {
     expect(s.join(ticket("b"), 3000 + RECONNECT_MS)).toMatchObject({ ok: false, code: "closed" });
   });
 });
+
+describe("taunts and chat", () => {
+  it("sends the emoji in the slot, at most once every 2 seconds", () => {
+    const s = room();
+    s.join({ ...ticket("a"), emojis: ["🔥", "🐢"] }, 0);
+    expect(s.taunt("a", 2, 1000)).toEqual({ from: "a", emoji: "🐢" });
+    expect(s.taunt("a", 1, 2000)).toBeNull();
+    expect(s.taunt("a", 1, 3000)).toEqual({ from: "a", emoji: "🔥" });
+    expect(s.taunt("a", 9, 6000)).toBeNull();
+  });
+
+  it("falls back to the default loadout", () => {
+    const s = room();
+    s.join(ticket("a"), 0);
+    expect(s.taunt("a", 1, 5000)?.emoji).toBe("👋");
+  });
+
+  it("allows chat in the lobby and after the race, filtered and rate limited", () => {
+    const s = racing(["a"]);
+    expect(s.chat("a", "hi", COUNTDOWN_MS + 10)).toBeNull();
+    const lobby = room();
+    lobby.join(ticket("a"), 0);
+    const m = lobby.chat("a", "what the fuck", 1000);
+    expect(m).toMatchObject({ from: "a", name: "a", text: "what the ****" });
+    expect(lobby.chat("a", "again", 1500)).toBeNull();
+    expect(lobby.chat("a", "   ", 3000)).toBeNull();
+    expect(lobby.chatMessage(m!.id)).toEqual(m);
+  });
+
+  it("keeps the last 50 messages", () => {
+    const s = room();
+    s.join(ticket("a"), 0);
+    for (let i = 0; i < 60; i++) s.chat("a", `m${i}`, i * 2000);
+    expect(s.data.chat).toHaveLength(50);
+    expect(s.data.chat[0]!.text).toBe("m10");
+  });
+});

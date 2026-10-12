@@ -1,6 +1,12 @@
 import {
   AFTER_FIRST_FINISH_MS,
+  CHAT_COOLDOWN_MS,
+  CHAT_HISTORY,
   COUNTDOWN_MS,
+  TAUNT_COOLDOWN_MS,
+  defaultLoadout,
+  filterChat,
+  type ChatMessage,
   MAX_PLAYERS,
   RECONNECT_MS,
   round1,
@@ -35,6 +41,9 @@ export type Player = {
   level: number;
   skin: string;
   avgWpm: number;
+  emojis: string[];
+  lastTauntAt: number;
+  lastChatAt: number;
   bot: BotState | null;
   joinedAt: number;
   connected: boolean;
@@ -68,17 +77,26 @@ export type RoomData = {
   endedAt: number | null;
   players: Player[];
   results: RaceResult[] | null;
+  chat: ChatMessage[];
   persisted: boolean;
 };
+
+export type Taunt = { from: string; emoji: string };
 
 export type JoinResult =
   { ok: true; rejoined: boolean } | { ok: false; code: string; message: string };
 
 export type TickResult = { changed: boolean; ended: boolean };
 
-type Identity = Pick<Ticket, "sub" | "uid" | "name" | "level" | "skin" | "wpm">;
+type Identity = Pick<Ticket, "sub" | "uid" | "name" | "level" | "skin" | "wpm"> & {
+  emojis?: string[];
+};
+
+export const BOT_TAUNT_CHANCE = 0.35;
 
 export class RaceState {
+  private taunts: Taunt[] = [];
+
   constructor(
     public data: RoomData,
     private rng: Rng = Math.random,
@@ -109,6 +127,7 @@ export class RaceState {
         endedAt: null,
         players: [],
         results: null,
+        chat: [],
         persisted: false,
       },
       rng,
@@ -181,6 +200,9 @@ export class RaceState {
       level: p.level,
       skin: p.skin,
       avgWpm: p.wpm,
+      emojis: p.emojis?.length ? p.emojis : defaultLoadout,
+      lastTauntAt: -Infinity,
+      lastChatAt: -Infinity,
       bot: p.bot,
       joinedAt: now,
       connected,
@@ -295,6 +317,46 @@ export class RaceState {
     }
   }
 
+  taunt(id: string, slot: number, now: number): Taunt | null {
+    const p = this.player(id);
+    if (!p || p.left || this.data.closed) return null;
+    if (now - p.lastTauntAt < TAUNT_COOLDOWN_MS) return null;
+    const emoji = p.emojis[slot - 1];
+    if (!emoji) return null;
+    p.lastTauntAt = now;
+    return { from: p.id, emoji };
+  }
+
+  chat(id: string, text: string, now: number): ChatMessage | null {
+    const d = this.data;
+    if (d.phase !== "lobby" && d.phase !== "done") return null;
+    const p = this.player(id);
+    if (!p || p.bot) return null;
+    if (now - p.lastChatAt < CHAT_COOLDOWN_MS) return null;
+    const clean = filterChat(text);
+    if (!clean) return null;
+    p.lastChatAt = now;
+    const m: ChatMessage = {
+      id: `${now.toString(36)}${Math.floor(this.rng() * 1e6).toString(36)}`,
+      from: p.id,
+      name: p.name,
+      text: clean,
+      at: now,
+    };
+    d.chat = [...d.chat, m].slice(-CHAT_HISTORY);
+    return m;
+  }
+
+  chatMessage(id: string) {
+    return this.data.chat.find((m) => m.id === id) ?? null;
+  }
+
+  drainTaunts() {
+    const out = this.taunts;
+    this.taunts = [];
+    return out;
+  }
+
   private finishBot(p: Player, plan: TypistPlan) {
     const len = this.length;
     this.markFinished(p, Math.round(plan.durationMs), this.data.startsAt! + plan.durationMs, {
@@ -304,6 +366,10 @@ export class RaceState {
       errors: plan.errors,
       samples: sampleSpeeds(plan),
     });
+    if (p.place! <= 2 && this.rng() < BOT_TAUNT_CHANCE) {
+      const pickFrom = ["🏁", "😎", "🔥", "👋", "🚀"];
+      this.taunts.push({ from: p.id, emoji: pickFrom[Math.floor(this.rng() * pickFrom.length)]! });
+    }
   }
 
   private moveBots(now: number) {

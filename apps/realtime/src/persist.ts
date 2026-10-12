@@ -1,4 +1,4 @@
-import { profiles, raceResults, races, type AnyDb } from "@race-key/db";
+import { chatReports, profiles, raceResults, races, type AnyDb } from "@race-key/db";
 import { consistency, round1 } from "@race-key/shared";
 import { eq, sql } from "drizzle-orm";
 import type { RoomData } from "./room/state";
@@ -76,4 +76,17 @@ export async function persistRace(db: AnyDb, data: RoomData) {
       .where(eq(profiles.userId, uid));
   }
   return true;
+}
+
+export async function reportChat(
+  db: AnyDb,
+  report: {
+    reporterId: string | null;
+    reportedName: string;
+    reportedUserId: string | null;
+    roomId: string;
+    message: string;
+  },
+) {
+  await db.insert(chatReports).values(report);
 }

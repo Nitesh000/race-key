@@ -1,6 +1,13 @@
 "use client";
 
-import type { ClientMessage, RoomSnapshot } from "@race-key/shared";
+import {
+  defaultLoadout,
+  type ChatMessage,
+  type ClientMessage,
+  type RoomSnapshot,
+} from "@race-key/shared";
+import { getSettings } from "@/features/settings/store";
+import { TauntStore } from "@/features/taunts/taunt-store";
 import { useEffect, useRef, useState } from "react";
 import { RaceConnection, type ConnectionStatus } from "./connection";
 import { ProgressStore } from "./progress-store";
@@ -12,7 +19,11 @@ export function useRaceRoom(host: string, roomId: string) {
   const [you, setYou] = useState<string | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [error, setError] = useState<RoomError | null>(null);
+  const [chat, setChat] = useState<ChatMessage[]>([]);
+  const [reported, setReported] = useState<Set<string>>(new Set());
+  const [emojis, setEmojis] = useState<string[]>(defaultLoadout);
   const progress = useRef(new ProgressStore()).current;
+  const taunts = useRef(new TauntStore()).current;
   const connRef = useRef<RaceConnection | null>(null);
   const youRef = useRef<string | null>(null);
   const raceIdRef = useRef<string | null>(null);
@@ -30,9 +41,24 @@ export function useRaceRoom(host: string, roomId: string) {
           progress.apply(msg.p, youRef.current ?? undefined);
           return;
         }
+        if (msg.t === "taunt") {
+          if (msg.from === youRef.current || !getSettings().muteTaunts)
+            taunts.show(msg.from, msg.emoji);
+          return;
+        }
+        if (msg.t === "chat") {
+          setChat((c) => [...c.slice(-49), msg.m]);
+          return;
+        }
+        if (msg.t === "reported") {
+          setReported((r) => new Set(r).add(msg.id));
+          return;
+        }
         if (msg.t === "welcome") {
           youRef.current = msg.you;
           setYou(msg.you);
+          setEmojis(msg.emojis);
+          setChat(msg.chat);
         }
         if (msg.t === "welcome" || msg.t === "room") {
           if (raceIdRef.current !== msg.room.raceId) {
@@ -51,7 +77,7 @@ export function useRaceRoom(host: string, roomId: string) {
       conn.close();
       connRef.current = null;
     };
-  }, [host, roomId, progress]);
+  }, [host, roomId, progress, taunts]);
 
   return {
     room,
@@ -59,6 +85,10 @@ export function useRaceRoom(host: string, roomId: string) {
     status,
     error,
     progress,
+    taunts,
+    chat,
+    reported,
+    emojis,
     send: (msg: ClientMessage) => connRef.current?.send(msg),
     serverNow: () => connRef.current?.serverNow() ?? Date.now(),
     toPerf: (t: number) => connRef.current?.toPerf(t) ?? performance.now(),

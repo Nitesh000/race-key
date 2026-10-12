@@ -1,9 +1,11 @@
 "use client";
 
 import { MAX_PLAYERS, type PublicPlayer } from "@race-key/shared";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
 import type { TrackDisplay } from "@/features/settings/store";
+import { Emoji } from "@/features/taunts/emoji";
+import type { Bubble, TauntStore } from "@/features/taunts/taunt-store";
 import { Car } from "./car";
 import type { ProgressStore } from "./progress-store";
 
@@ -27,11 +29,33 @@ type Props = {
   you: string | null;
   length: number;
   store: ProgressStore;
+  taunts: TauntStore;
   display: TrackDisplay;
   overlay?: React.ReactNode;
 };
 
-export const Track = memo(function Track({ players, you, length, store, display, overlay }: Props) {
+function TauntBubble({ bubble }: { bubble: Bubble | undefined }) {
+  if (!bubble) return null;
+  return (
+    <span
+      key={bubble.key}
+      className="taunt-bubble pointer-events-none absolute top-1/2 grid aspect-square h-[calc(100%-2px)] -translate-y-1/2 place-items-center rounded-full bg-surface shadow-sm"
+    >
+      <Emoji char={bubble.emoji} className="size-[75%]" />
+    </span>
+  );
+}
+
+export const Track = memo(function Track({
+  players,
+  you,
+  length,
+  store,
+  taunts,
+  display,
+  overlay,
+}: Props) {
+  const bubbles = useSyncExternalStore(taunts.subscribe, taunts.get, taunts.get);
   const others = players.filter((p) => p.id !== you);
   const me = players.find((p) => p.id === you);
   const ordered = me ? [...others, me] : others;
@@ -100,15 +124,20 @@ export const Track = memo(function Track({ players, you, length, store, display,
               )}
             >
               {display === "minimal" ? (
-                <div
-                  ref={(el) =>
-                    void (el ? racerRefs.current.set(p.id, el) : racerRefs.current.delete(p.id))
-                  }
-                  className={cn(
-                    "racer-bar absolute inset-0 origin-left",
-                    isYou ? "bg-accent" : "bg-racer",
-                  )}
-                />
+                <>
+                  <div
+                    ref={(el) =>
+                      void (el ? racerRefs.current.set(p.id, el) : racerRefs.current.delete(p.id))
+                    }
+                    className={cn(
+                      "racer-bar absolute inset-0 origin-left",
+                      isYou ? "bg-accent" : "bg-racer",
+                    )}
+                  />
+                  <span className="absolute inset-y-0 right-1">
+                    <TauntBubble bubble={bubbles.get(p.id)} />
+                  </span>
+                </>
               ) : (
                 <div className="absolute inset-y-0 left-0" style={{ right: laneH * 2 }}>
                   <div
@@ -118,10 +147,13 @@ export const Track = memo(function Track({ players, you, length, store, display,
                     className="racer absolute inset-0"
                   >
                     <div
-                      className={cn("h-full py-0.5", !p.place && "racer-moving")}
+                      className={cn("relative h-full py-0.5", !p.place && "racer-moving")}
                       style={{ width: laneH * 2 }}
                     >
                       <Car you={isYou} />
+                      <span className="absolute inset-y-0" style={{ left: laneH * 2 + 2 }}>
+                        <TauntBubble bubble={bubbles.get(p.id)} />
+                      </span>
                     </div>
                   </div>
                 </div>

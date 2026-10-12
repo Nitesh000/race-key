@@ -10,7 +10,7 @@ import {
 import { Server, type Connection, type ConnectionContext, type WSMessage } from "partyserver";
 import { z } from "zod";
 import type { Secrets } from "./env";
-import { persistRace } from "./persist";
+import { persistRace, reportChat } from "./persist";
 import { RaceState, type RoomData } from "./room/state";
 
 type ConnState = { sub: string };
@@ -85,7 +85,14 @@ export class RaceRoom extends Server<Env & Secrets> {
       if (other.id !== conn.id && other.state?.sub === ticket.sub) other.close(4000, "replaced");
     }
     conn.setState({ sub: ticket.sub });
-    this.send(conn, { t: "welcome", you: ticket.sub, room: this.room.snapshot(now), now });
+    this.send(conn, {
+      t: "welcome",
+      you: ticket.sub,
+      emojis: this.room.player(ticket.sub)!.emojis,
+      room: this.room.snapshot(now),
+      chat: this.room.data.chat,
+      now,
+    });
     this.broadcastRoom([conn.id]);
     void this.save();
     this.schedule();
@@ -108,6 +115,22 @@ export class RaceRoom extends Server<Env & Secrets> {
         return;
       case "start":
         if (this.room.start(sub, now)) this.changed();
+        return;
+      case "taunt": {
+        const taunt = this.room.taunt(sub, msg.slot, now);
+        if (taunt) this.broadcastJson({ t: "taunt", ...taunt });
+        return;
+      }
+      case "chat": {
+        const m = this.room.chat(sub, msg.text, now);
+        if (m) {
+          this.broadcastJson({ t: "chat", m });
+          void this.save();
+        }
+        return;
+      }
+      case "report":
+        this.report(conn, sub, msg.id);
         return;
       case "again":
         if (
@@ -141,11 +164,32 @@ export class RaceRoom extends Server<Env & Secrets> {
     this.room = null;
   }
 
+  private report(conn: Connection, sub: string, messageId: string) {
+    const room = this.room!;
+    const m = room.chatMessage(messageId);
+    if (!m || m.from === sub) return;
+    this.send(conn, { t: "reported", id: messageId });
+    const url = this.env.DATABASE_URL;
+    if (!url) return;
+    const reporter = room.player(sub);
+    const target = room.player(m.from);
+    this.ctx.waitUntil(
+      reportChat(createDb(url), {
+        reporterId: reporter?.uid ?? null,
+        reportedName: m.name,
+        reportedUserId: target?.uid ?? null,
+        roomId: room.data.roomId,
+        message: m.text,
+      }).catch((e) => console.error("could not save chat report", e)),
+    );
+  }
+
   private loop() {
     if (!this.room) return;
     const now = Date.now();
     const { changed, ended } = this.room.tick(now);
     if (changed) this.changed();
+    for (const taunt of this.room.drainTaunts()) this.broadcastJson({ t: "taunt", ...taunt });
     if (this.room.phase === "racing" || ended) this.broadcastTick(now);
     if (ended) this.onEnded();
   }
@@ -197,6 +241,10 @@ export class RaceRoom extends Server<Env & Secrets> {
     if (!this.room) return;
     await this.ctx.storage.put("room", this.room.data);
     await this.ctx.storage.setAlarm(Date.now() + IDLE_TTL_MS);
+  }
+
+  private broadcastJson(msg: ServerMessage) {
+    this.broadcast(JSON.stringify(msg));
   }
 
   private send(conn: Connection, msg: ServerMessage) {

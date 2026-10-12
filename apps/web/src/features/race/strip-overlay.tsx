@@ -2,6 +2,7 @@
 
 import type { RoomSnapshot } from "@race-key/shared";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 
 export function StripOverlay({
   room,
@@ -40,10 +41,14 @@ export function StripOverlay({
   if (!label) return null;
 
   const big = /^\d$|Go!/.test(label);
+  const dim = room.phase === "lobby" || room.phase === "countdown" || room.phase === "done";
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none absolute inset-0 grid place-items-center bg-track/70"
+      className={cn(
+        "pointer-events-none absolute inset-0 grid place-items-center",
+        dim && "bg-track/70",
+      )}
     >
       <span
         key={label}

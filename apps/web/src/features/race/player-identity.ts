@@ -1,8 +1,11 @@
 import "server-only";
-import { randomName, type Ticket } from "@race-key/shared";
+import { emojiLoadouts } from "@race-key/db";
+import { defaultLoadout, randomName, type Ticket } from "@race-key/shared";
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getProfileSummary } from "@/features/profile/queries";
 import { authEnabled } from "@/lib/auth";
+import { getDb } from "@/lib/db";
 import { getViewer } from "@/lib/session";
 
 const GUEST_ID = "rk-guest-id";
@@ -14,7 +17,10 @@ export async function raceIdentity(): Promise<Identity | null> {
   if (authEnabled()) {
     const viewer = await getViewer();
     if (!viewer) return null;
-    const { last10 } = await getProfileSummary(viewer.id);
+    const [{ last10 }, [loadout]] = await Promise.all([
+      getProfileSummary(viewer.id),
+      getDb().select().from(emojiLoadouts).where(eq(emojiLoadouts.userId, viewer.id)),
+    ]);
     return {
       sub: viewer.id,
       uid: viewer.id,
@@ -22,6 +28,7 @@ export async function raceIdentity(): Promise<Identity | null> {
       level: viewer.profile.level,
       skin: viewer.profile.equippedSkinId,
       wpm: Math.round(last10),
+      emojis: loadout?.slots ?? defaultLoadout,
     };
   }
   const jar = await cookies();
@@ -39,5 +46,5 @@ export async function raceIdentity(): Promise<Identity | null> {
     jar.set(GUEST_ID, sub, opts);
     jar.set(GUEST_NAME, name, opts);
   }
-  return { sub, uid: null, name, level: 1, skin: "hatchback", wpm: 0 };
+  return { sub, uid: null, name, level: 1, skin: "hatchback", wpm: 0, emojis: defaultLoadout };
 }

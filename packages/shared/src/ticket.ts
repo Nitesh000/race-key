@@ -7,6 +7,7 @@ export const ticketSchema = z.object({
   level: z.number().int().min(1),
   skin: z.string().max(40),
   wpm: z.number().nonnegative().max(400),
+  emojis: z.array(z.string().max(16)).max(9).default([]),
   exp: z.number().int(),
 });
 export type Ticket = z.infer<typeof ticketSchema>;

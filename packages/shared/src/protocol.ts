@@ -5,6 +5,9 @@ export const COUNTDOWN_MS = 5000;
 export const RECONNECT_MS = 10_000;
 export const PROGRESS_INTERVAL_MS = 100;
 export const AFTER_FIRST_FINISH_MS = 90_000;
+export const TAUNT_COOLDOWN_MS = 2000;
+export const CHAT_COOLDOWN_MS = 1000;
+export const CHAT_HISTORY = 50;
 
 export const phases = ["lobby", "countdown", "racing", "done"] as const;
 export type Phase = (typeof phases)[number];
@@ -25,6 +28,9 @@ export const clientMessageSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("progress"), pos: z.number().int().nonnegative() }),
   z.object({ t: z.literal("finish"), stats: finishStatsSchema }),
   z.object({ t: z.literal("ping"), at: z.number() }),
+  z.object({ t: z.literal("taunt"), slot: z.number().int().min(1).max(9) }),
+  z.object({ t: z.literal("chat"), text: z.string().min(1).max(500) }),
+  z.object({ t: z.literal("report"), id: z.string().min(1).max(40) }),
 ]);
 export type ClientMessage = z.infer<typeof clientMessageSchema>;
 
@@ -75,10 +81,22 @@ export type RoomSnapshot = {
 
 export type TickEntry = [id: string, pos: number, wpm: number];
 
+export type ChatMessage = { id: string; from: string; name: string; text: string; at: number };
+
 export type ServerMessage =
-  | { t: "welcome"; you: string; room: RoomSnapshot; now: number }
+  | {
+      t: "welcome";
+      you: string;
+      emojis: string[];
+      room: RoomSnapshot;
+      chat: ChatMessage[];
+      now: number;
+    }
   | { t: "room"; room: RoomSnapshot; now: number }
   | { t: "tick"; p: TickEntry[] }
+  | { t: "taunt"; from: string; emoji: string }
+  | { t: "chat"; m: ChatMessage }
+  | { t: "reported"; id: string }
   | { t: "pong"; at: number; now: number }
   | { t: "error"; code: string; message: string };
 

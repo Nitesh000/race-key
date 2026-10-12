@@ -41,7 +41,7 @@
   }
 }
 
-[data-motion="reduced"] *,
+[data-motion="reduced"] *:not(.taunt-bubble),
 [data-motion="reduced"] *::before,
 [data-motion="reduced"] *::after {
   animation-duration: 0.001ms !important;

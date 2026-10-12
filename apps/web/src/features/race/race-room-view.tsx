@@ -2,10 +2,13 @@
 
 import { PROGRESS_INTERVAL_MS } from "@race-key/shared";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ChatBox } from "@/features/chat/chat-box";
 import { useSettings } from "@/features/settings/store";
+import { EmojiTray } from "@/features/taunts/emoji-tray";
+import { createTauntKeys } from "@/features/taunts/taunt-keys";
 import type { TypingEngine } from "@/features/typing/engine";
 import { LiveStats } from "@/features/typing/live-stats";
 import { RaceScreenLayout } from "@/features/typing/race-screen-layout";
@@ -28,9 +31,33 @@ const hints = {
 const publicLobbyHint = "The race starts on its own in a few seconds";
 
 export function RaceRoomView({ host, roomId }: { host: string; roomId: string }) {
-  const { room, you, status, error, progress, send, serverNow, toPerf } = useRaceRoom(host, roomId);
+  const {
+    room,
+    you,
+    status,
+    error,
+    progress,
+    taunts,
+    chat,
+    reported,
+    emojis,
+    send,
+    serverNow,
+    toPerf,
+  } = useRaceRoom(host, roomId);
   const settings = useSettings();
   const small = useMediaQuery("(max-width: 640px)");
+  const touch = useMediaQuery("(pointer: coarse)");
+
+  const sendRef = useRef(send);
+  useEffect(() => {
+    sendRef.current = send;
+  });
+  const tauntKeys = useMemo(
+    () => createTauntKeys((slot) => sendRef.current({ t: "taunt", slot })),
+    [],
+  );
+  useEffect(() => tauntKeys.attach(), [tauntKeys]);
   const display = small && settings.track === "full" ? "minimal" : settings.track;
 
   const [go, setGo] = useState(false);
@@ -76,6 +103,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
     enabled: go && !local && !me?.left,
     onKeystroke,
     onFinish,
+    interceptKey: tauntKeys.intercept,
   });
   const { start, focus, reset } = session;
 
@@ -126,6 +154,16 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
     );
   }
 
+  const chatBox = (
+    <ChatBox
+      messages={chat}
+      you={you}
+      reported={reported}
+      onSend={(text) => send({ t: "chat", text })}
+      onReport={(id) => send({ t: "report", id })}
+    />
+  );
+
   if (!room) {
     return <p className="py-24 text-center text-muted">Connecting to the race…</p>;
   }
@@ -140,6 +178,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
             you={you}
             length={text.length}
             store={progress}
+            taunts={taunts}
             display={display}
             overlay={<StripOverlay room={room} place={me?.place ?? null} serverNow={serverNow} />}
           />
@@ -147,6 +186,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
         stats={
           <>
             <LiveStats stats={session.stats} />
+            {touch && <EmojiTray loadout={emojis} onTaunt={(slot) => send({ t: "taunt", slot })} />}
             {status !== "open" && (
               <span className="rounded-full bg-warning/15 px-3 py-1 text-sm text-warning">
                 {status === "closed" ? "Disconnected" : "Reconnecting…"}
@@ -173,12 +213,19 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
         }
         below={
           room.phase === "lobby" ? (
-            <LobbyPanel room={room} you={you} onStart={() => send({ t: "start" })} />
+            <LobbyPanel
+              room={room}
+              you={you}
+              emojis={emojis}
+              chat={chatBox}
+              onStart={() => send({ t: "start" })}
+            />
           ) : room.phase === "done" || local ? (
             <ResultsPanel
               room={room}
               you={you}
               local={local}
+              chat={room.phase === "done" ? chatBox : null}
               onAgain={() => send({ t: "again" })}
             />
           ) : null

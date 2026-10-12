@@ -26,7 +26,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Roll back web
-        if: inputs.target != 'realtime'
+        if: inputs.target != 'realtime' && vars.WEB_HOST == 'cloudflare'
         working-directory: apps/web
         run: pnpm exec wrangler rollback --message "manual rollback ${{ github.run_id }}" -y
         env:

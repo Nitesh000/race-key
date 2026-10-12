@@ -4,14 +4,19 @@ import type { RoomSnapshot } from "@race-key/shared";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { Emoji } from "@/features/taunts/emoji";
 
 export function LobbyPanel({
   room,
   you,
+  emojis,
+  chat,
   onStart,
 }: {
   room: RoomSnapshot;
   you: string | null;
+  emojis: string[];
+  chat: React.ReactNode;
   onStart: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -68,6 +73,22 @@ export function LobbyPanel({
           Up to 5 racers. The race starts on its own when the room is full.
         </p>
       )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+        <span>
+          Hold <kbd className="rounded bg-surface-2 px-1">Tab</kbd> +{" "}
+          <kbd className="rounded bg-surface-2 px-1">1</kbd>–
+          <kbd className="rounded bg-surface-2 px-1">9</kbd> while typing to taunt:
+        </span>
+        <span className="flex gap-1">
+          {emojis.map((c, i) => (
+            <span key={i} className="flex items-center gap-0.5">
+              <span className="font-mono">{i + 1}</span>
+              <Emoji char={c} />
+            </span>
+          ))}
+        </span>
+      </div>
+      {chat}
     </Card>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "name": "@race-key/assets",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@race-key/config": "workspace:*",
+    "@race-key/shared": "workspace:*",
+    "@twemoji/svg": "^15.0.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.39.0",
+    "svgo": "^4.1.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  }
+}

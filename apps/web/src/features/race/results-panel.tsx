@@ -20,11 +20,13 @@ export function ResultsPanel({
   room,
   you,
   local,
+  chat,
   onAgain,
 }: {
   room: RoomSnapshot;
   you: string | null;
   local: LocalFinish | null;
+  chat: React.ReactNode;
   onAgain: () => void;
 }) {
   const [source, setSource] = useState<ClientPassage | null>(null);
@@ -104,6 +106,7 @@ export function ResultsPanel({
           </Link>
         </div>
       </Card>
+      {chat && <Card>{chat}</Card>}
       {source && <SourceCard passage={source} />}
     </div>
   );
