@@ -1,4 +1,12 @@
-import { randFloat, randInt, type Rng } from "@race-key/shared";
+import { pick, racerCategories, randFloat, randInt, skins, type Rng } from "@race-key/shared";
+
+const botSkins = skins
+  .filter((s) => racerCategories.includes(s.category) && s.priceType !== "premium")
+  .map((s) => s.id);
+
+export function botSkin(rng: Rng) {
+  return pick(rng, botSkins);
+}
 
 export const WAIT_MIN_MS = 12_000;
 export const WAIT_MAX_MS = 13_000;

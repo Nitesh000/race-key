@@ -24,7 +24,7 @@ import {
   type Ticket,
 } from "@race-key/shared";
 import { finishFlags, maxPlausiblePos } from "../anticheat";
-import { autoStartDelay, botJoinTimes, botLevel } from "../bots/roster";
+import { autoStartDelay, botJoinTimes, botLevel, botSkin } from "../bots/roster";
 import { botTargetWpm, roomBaseline } from "../bots/speed";
 import { planTypist, positionAt, sampleSpeeds, type TypistPlan } from "../bots/typist";
 
@@ -235,7 +235,7 @@ export class RaceState {
           uid: null,
           name: name!,
           level,
-          skin: "hatchback",
+          skin: botSkin(this.rng),
           wpm: 0,
           bot: { target: 0, plan: null },
         },

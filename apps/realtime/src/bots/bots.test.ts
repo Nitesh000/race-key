@@ -1,6 +1,6 @@
 import { mulberry32, wpm } from "@race-key/shared";
 import { describe, expect, it } from "vitest";
-import { autoStartDelay, botJoinTimes, botLevel } from "./roster";
+import { autoStartDelay, botJoinTimes, botLevel, botSkin } from "./roster";
 import { botTargetWpm, MAX_BOT_WPM, MIN_BOT_WPM, roomBaseline } from "./speed";
 import { planTypist, positionAt, sampleSpeeds } from "./typist";
 
@@ -74,5 +74,12 @@ describe("roster", () => {
       expect(l).toBeLessThanOrEqual(13);
     }
     expect(botLevel([1], mulberry32(7))).toBeGreaterThanOrEqual(1);
+  });
+
+  it("gives bots earned skins, never premium ones", () => {
+    const rng = mulberry32(8);
+    const seen = new Set(Array.from({ length: 300 }, () => botSkin(rng)));
+    expect(seen.size).toBeGreaterThan(8);
+    for (const id of ["rocket", "ufo", "dragon"]) expect(seen.has(id)).toBe(false);
   });
 });

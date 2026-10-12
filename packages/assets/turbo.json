@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "outputs": ["$TURBO_ROOT$/apps/web/public/assets/**"]
+      "outputs": ["generated/**", "$TURBO_ROOT$/apps/web/public/assets/**"]
     }
   }
 }

@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import type { TrackDisplay } from "@/features/settings/store";
 import { Emoji } from "@/features/taunts/emoji";
 import type { Bubble, TauntStore } from "@/features/taunts/taunt-store";
-import { Car } from "./car";
+import { Racer } from "@/features/skins/racer";
 import type { ProgressStore } from "./progress-store";
 
 const LANE = { full: 24, minimal: 14 } as const;
@@ -150,7 +150,7 @@ export const Track = memo(function Track({
                       className={cn("relative h-full py-0.5", !p.place && "racer-moving")}
                       style={{ width: laneH * 2 }}
                     >
-                      <Car you={isYou} />
+                      <Racer skin={p.skin} you={isYou} />
                       <span className="absolute inset-y-0" style={{ left: laneH * 2 + 2 }}>
                         <TauntBubble bubble={bubbles.get(p.id)} />
                       </span>

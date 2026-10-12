@@ -8,6 +8,33 @@
   animation: racer-bob 0.5s ease-in-out infinite alternate;
 }
 
+.racer-moving .racer-legs {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: racer-stride 0.3s ease-in-out infinite alternate;
+}
+
+.racer-moving .racer-flame {
+  transform-box: fill-box;
+  transform-origin: right center;
+  animation: racer-flame 0.15s linear infinite alternate;
+}
+
+@keyframes racer-stride {
+  from {
+    transform: skewX(-12deg);
+  }
+  to {
+    transform: skewX(12deg);
+  }
+}
+
+@keyframes racer-flame {
+  to {
+    transform: scaleX(0.7);
+  }
+}
+
 @keyframes racer-bob {
   to {
     transform: translateY(-1px);
@@ -25,12 +52,16 @@
   animation: strip-pop 200ms ease-out;
 }
 
-[data-motion="reduced"] .racer-moving .racer-art {
+[data-motion="reduced"] .racer-moving .racer-art,
+[data-motion="reduced"] .racer-moving .racer-legs,
+[data-motion="reduced"] .racer-moving .racer-flame {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .racer-moving .racer-art {
+  .racer-moving .racer-art,
+  .racer-moving .racer-legs,
+  .racer-moving .racer-flame {
     animation: none;
   }
 }
