@@ -30,7 +30,8 @@ jobs:
           workingDirectory: apps/realtime
           command: deploy
 
-      - name: Deploy web
+      - name: Deploy web to Cloudflare
+        if: vars.WEB_HOST == 'cloudflare'
         run: pnpm --filter @race-key/web deploy:cf
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

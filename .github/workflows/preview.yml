@@ -12,7 +12,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  deploy:
+  realtime:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -27,26 +27,13 @@ jobs:
           workingDirectory: apps/realtime
           command: deploy --env preview
 
-      - name: Deploy web preview to Vercel
-        id: web
-        run: |
-          pnpm dlx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-          pnpm dlx vercel build --token=$VERCEL_TOKEN
-          url=$(pnpm dlx vercel deploy --prebuilt --token=$VERCEL_TOKEN)
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          NEXT_PUBLIC_REALTIME_URL: ${{ vars.PREVIEW_REALTIME_URL }}
-
       - uses: actions/github-script@v9
         with:
           script: |
             const body = [
               "### Preview",
               "",
-              `- Web: ${{ steps.web.outputs.url }}`,
+              "- Web: Vercel posts its preview link on this pull request.",
               `- Realtime: ${{ steps.realtime.outputs.deployment-url || vars.PREVIEW_REALTIME_URL }}`,
             ].join("\n");
             const { data: comments } = await github.rest.issues.listComments({

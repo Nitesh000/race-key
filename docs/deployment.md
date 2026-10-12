@@ -1,52 +1,92 @@
 # Deployment
 
-Production runs on Cloudflare (web through OpenNext, realtime as a Worker with Durable Objects).
-Vercel Hobby is only used for pull request previews.
+Everything runs on free plans:
 
-## Accounts
+| Part          | Where                                | Plan         |
+| ------------- | ------------------------------------ | ------------ |
+| Web (Next.js) | Vercel                               | Hobby        |
+| Race server   | Cloudflare Workers + Durable Objects | Workers Free |
+| Database      | Neon                                 | Free         |
+| Email         | Resend                               | Free         |
 
-Vercel, Cloudflare, Neon, Resend, Dodo Payments and Sentry, all on free plans.
+Vercel can't host the race server: it needs long-lived WebSockets and Durable Objects, which only
+Cloudflare offers for free.
 
-## GitHub secrets
+> **Vercel Hobby is for non-commercial use only.** Ads and paid skins are off unless their keys
+> are set (`NEXT_PUBLIC_ADSENSE_CLIENT`, house ads, `DODO_PAYMENTS_API_KEY`). Keep them off on
+> Hobby. To turn them on for free, move the web app to Cloudflare (allowed commercially): set the
+> GitHub variable `WEB_HOST=cloudflare` and the deploy workflow ships it with OpenNext.
 
-| Secret                                               | Used by                     |
-| ---------------------------------------------------- | --------------------------- |
-| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`      | preview, deploy, rollback   |
-| `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | preview                     |
-| `NEON_API_KEY`                                       | e2e (throwaway branches)    |
-| `DATABASE_URL`                                       | deploy (production migrate) |
-| `TURBO_TOKEN`                                        | remote cache                |
+## 1. Database (Neon)
 
-## GitHub variables
+Create a project, copy the connection string, then from the repo root:
 
-`TURBO_TEAM`, `NEON_PROJECT_ID`, `REALTIME_URL`, `PREVIEW_REALTIME_URL`.
+```sh
+pnpm db:migrate   # create the tables
+pnpm db:seed      # load books and passages
+```
 
-## Worker secrets
-
-Set with `wrangler secret put` in `apps/realtime` and `apps/web`:
-`DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`,
-`GITHUB_CLIENT_SECRET`, `RESEND_API_KEY`, `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY`,
-`REALTIME_SHARED_SECRET`.
-
-## Branch protection
-
-Protect `main`: require pull requests, require the `CI / check` status, and block force pushes.
-
-## Rollback
-
-Run the `Rollback` workflow from the Actions tab and pick `web`, `realtime` or `both`.
-
-## Database
+Other commands, all reading `DATABASE_URL` from the environment or `apps/web/.env`:
 
 ```sh
 pnpm db:push       # sync the schema straight to the database (quick, no migration file)
 pnpm db:generate   # write a migration file after editing the schema
-pnpm db:migrate    # apply migration files (what production deploys run)
-pnpm db:seed       # load books and passages
 pnpm db:studio     # browse the data
 ```
 
-These read `DATABASE_URL` from the environment, or from `apps/web/.env` if it isn't set.
+Pick one way per schema change: `db:push`, or `db:generate` + `db:migrate`. Production deploys run
+`db:migrate`, so a change made only with `db:push` never reaches a fresh database.
 
-Use a Neon branch per developer for local work. The schema tests run against PGlite, so they
-need no database.
+## 2. Race server (Cloudflare)
+
+```sh
+cd apps/realtime
+pnpm exec wrangler login
+pnpm exec wrangler secret put REALTIME_SHARED_SECRET   # any long random string
+pnpm exec wrangler secret put DATABASE_URL
+pnpm deploy
+```
+
+Note the `https://race-key-realtime.<you>.workers.dev` URL it prints.
+
+## 3. Web (Vercel Hobby)
+
+1. Import the GitHub repo in Vercel and set **Root Directory** to `apps/web`. Everything else
+   comes from `apps/web/vercel.json` (pnpm install at the repo root, Turborepo build, skipping
+   builds when nothing the web app uses changed, functions in `cle1` next to Neon's `us-east-2`).
+2. Add environment variables (Production and Preview):
+
+| Variable                                      | Value                                         |
+| --------------------------------------------- | --------------------------------------------- |
+| `DATABASE_URL`                                | Neon connection string                        |
+| `BETTER_AUTH_SECRET`                          | `openssl rand -base64 32`                     |
+| `NEXT_PUBLIC_REALTIME_URL`                    | the workers.dev URL from step 2               |
+| `REALTIME_SHARED_SECRET`                      | same value as the worker secret               |
+| `ENABLE_EXPERIMENTAL_COREPACK`                | `1` (makes Vercel use the repo's pnpm 11)     |
+| `BETTER_AUTH_URL`                             | optional, your custom domain once you add one |
+| `GOOGLE_*`, `GITHUB_*`                        | optional social login                         |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL` | optional email                                |
+
+3. Deploy. Every push to `main` deploys production and every pull request gets a preview, through
+   Vercel's Git integration. If your Neon region isn't `us-east-2`, change `regions` in
+   `vercel.json` to the closest Vercel region (Hobby allows one).
+
+## GitHub Actions
+
+| Workflow       | Does                                                                       |
+| -------------- | -------------------------------------------------------------------------- |
+| `ci.yml`       | format, lint, typecheck, tests and build on every pull request             |
+| `e2e.yml`      | Playwright on Chromium, WebKit and Firefox against a throwaway Neon branch |
+| `preview.yml`  | deploys the race server preview environment for each pull request          |
+| `deploy.yml`   | on `main`: migrate the database and deploy the race server                 |
+| `rollback.yml` | rolls the race server (and the web app on Cloudflare) back one version     |
+
+Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, `NEON_API_KEY`,
+`TURBO_TOKEN` (optional). Variables: `NEON_PROJECT_ID`, `REALTIME_URL`, `PREVIEW_REALTIME_URL`,
+`TURBO_TEAM` (optional), `WEB_HOST` (only set to `cloudflare` when moving off Vercel).
+
+Roll back the web app on Vercel from its dashboard (Deployments → Promote to Production).
+
+## Branch protection
+
+Protect `main`: require pull requests, require the `CI / check` status, and block force pushes.

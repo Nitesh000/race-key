@@ -11,7 +11,7 @@ import { claimUsername } from "@/features/profile/usernames";
 import { ResetPasswordEmail } from "@/emails/reset-password";
 import { getDb, hasDb } from "./db";
 import { sendEmail } from "./email";
-import { env } from "./env";
+import { env, siteUrl } from "./env";
 
 function createAuth() {
   const db = getDb();
@@ -20,7 +20,10 @@ function createAuth() {
 
   return betterAuth({
     secret: env("BETTER_AUTH_SECRET"),
-    baseURL: env("BETTER_AUTH_URL"),
+    baseURL: siteUrl(),
+    trustedOrigins: [env("VERCEL_URL"), env("VERCEL_BRANCH_URL")]
+      .filter((h): h is string => !!h)
+      .map((h) => `https://${h}`),
     database: drizzleAdapter(db, { provider: "pg", usePlural: true, schema }),
     emailAndPassword: {
       enabled: true,
