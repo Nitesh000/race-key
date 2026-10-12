@@ -9,8 +9,9 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/seed.ts",
+    "push": "drizzle-kit push",
+    "migrate": "tsx --import ./env.ts scripts/migrate.ts",
+    "seed": "tsx --import ./env.ts scripts/seed.ts",
     "studio": "drizzle-kit studio",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

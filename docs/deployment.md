@@ -39,10 +39,14 @@ Run the `Rollback` workflow from the Actions tab and pick `web`, `realtime` or `
 ## Database
 
 ```sh
-pnpm --filter @race-key/db generate   # after editing the schema
-DATABASE_URL=... pnpm --filter @race-key/db migrate
-DATABASE_URL=... pnpm --filter @race-key/db seed
+pnpm db:push       # sync the schema straight to the database (quick, no migration file)
+pnpm db:generate   # write a migration file after editing the schema
+pnpm db:migrate    # apply migration files (what production deploys run)
+pnpm db:seed       # load books and passages
+pnpm db:studio     # browse the data
 ```
+
+These read `DATABASE_URL` from the environment, or from `apps/web/.env` if it isn't set.
 
 Use a Neon branch per developer for local work. The schema tests run against PGlite, so they
 need no database.

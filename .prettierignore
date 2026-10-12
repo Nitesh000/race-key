@@ -6,3 +6,4 @@ dist
 generated
 packages/passages/data
 packages/db/migrations
+worker-configuration.d.ts
