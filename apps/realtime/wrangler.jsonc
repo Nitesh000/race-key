@@ -6,6 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
   "vars": { "ENVIRONMENT": "production" },
+  "triggers": { "crons": ["17 3 * * *"] },
   "durable_objects": {
     "bindings": [
       { "name": "RaceRoom", "class_name": "RaceRoom" },

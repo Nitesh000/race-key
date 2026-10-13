@@ -4,7 +4,10 @@ import {
   CHAT_HISTORY,
   COUNTDOWN_MS,
   TAUNT_COOLDOWN_MS,
+  analyzeKeystrokes,
   defaultLoadout,
+  fromBase64,
+  unpackKeystrokes,
   filterChat,
   type ChatMessage,
   MAX_PLAYERS,
@@ -54,6 +57,8 @@ export type Player = {
   place: number | null;
   timeMs: number | null;
   stats: FinishStats | null;
+  keylog: string | null;
+  tz: number;
   flags: string[];
 };
 
@@ -213,6 +218,8 @@ export class RaceState {
       place: null,
       timeMs: null,
       stats: null,
+      keylog: null,
+      tz: 0,
       flags: [],
     };
   }
@@ -300,8 +307,13 @@ export class RaceState {
     const serverMs = now - this.data.startsAt;
     const trusted = stats.timeMs <= serverMs && stats.timeMs >= serverMs - CLIENT_TIME_TOLERANCE_MS;
     const timeMs = trusted ? stats.timeMs : serverMs;
-    for (const f of finishFlags(stats, this.length, timeMs)) flag(p, f);
-    this.markFinished(p, timeMs, now, { ...stats, dts: undefined });
+    const log = readLog(stats.log);
+    if (log && !analyzeKeystrokes(this.data.passage.text, log).complete) flag(p, "keystrokes");
+    const dts = log ? log.slice(1).map((k) => k.dt) : null;
+    for (const f of finishFlags(dts, this.length, timeMs)) flag(p, f);
+    p.keylog = log ? stats.log! : null;
+    p.tz = stats.tz ?? 0;
+    this.markFinished(p, timeMs, now, { ...stats, log: undefined });
     return true;
   }
 
@@ -515,6 +527,7 @@ export class RaceState {
         place: null,
         timeMs: null,
         stats: null,
+        keylog: null,
         flags: [],
       });
     }
@@ -581,6 +594,15 @@ export class RaceState {
         left: p.left,
       })),
     };
+  }
+}
+
+function readLog(b64: string | undefined) {
+  if (!b64) return null;
+  try {
+    return unpackKeystrokes(fromBase64(b64));
+  } catch {
+    return null;
   }
 }
 

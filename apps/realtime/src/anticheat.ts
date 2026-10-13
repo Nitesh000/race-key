@@ -1,4 +1,4 @@
-import { wpm, type FinishStats } from "@race-key/shared";
+import { wpm } from "@race-key/shared";
 
 export const MAX_SUSTAINED_WPM = 250;
 export const MAX_CHARS_PER_SECOND = 30;
@@ -18,11 +18,11 @@ export function gapVariation(dts: number[]) {
   return sd / mean;
 }
 
-export function finishFlags(stats: FinishStats, chars: number, timeMs: number) {
+export function finishFlags(dts: number[] | null, chars: number, timeMs: number) {
   const flags: string[] = [];
   if (wpm(chars, timeMs) > MAX_SUSTAINED_WPM) flags.push("speed");
-  const variation = stats.dts ? gapVariation(stats.dts) : null;
+  const variation = dts ? gapVariation(dts) : null;
   if (variation !== null && variation < MIN_GAP_VARIATION) flags.push("timing");
-  if (!stats.dts || stats.dts.length < chars * 0.9) flags.push("no-keystrokes");
+  if (!dts || dts.length < chars * 0.9) flags.push("no-keystrokes");
   return flags;
 }

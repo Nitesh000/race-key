@@ -1,4 +1,11 @@
-import { COUNTDOWN_MS, MAX_PLAYERS, RECONNECT_MS, mulberry32 } from "@race-key/shared";
+import {
+  COUNTDOWN_MS,
+  MAX_PLAYERS,
+  RECONNECT_MS,
+  mulberry32,
+  packKeystrokes,
+  toBase64,
+} from "@race-key/shared";
 import { describe, expect, it } from "vitest";
 import { RaceState } from "./state";
 
@@ -22,6 +29,10 @@ function racing(players = ["a", "b"]) {
 }
 
 const humanGaps = (n: number) => Array.from({ length: n }, (_, i) => 90 + ((i * 37) % 140));
+const keylog = (text: string, gaps: number[]) =>
+  toBase64(
+    packKeystrokes(Array.from(text, (key, i) => ({ kind: "correct" as const, key, dt: gaps[i]! }))),
+  );
 
 const stats = (timeMs: number) => ({
   timeMs,
@@ -181,11 +192,21 @@ describe("anticheat in the room", () => {
     const at = COUNTDOWN_MS + 30_000;
     s.progress("a", text.length, at);
     s.progress("b", text.length, at);
-    s.finish("a", { ...stats(30_000), dts: new Array(text.length).fill(100) }, at);
-    s.finish("b", { ...stats(30_000), dts: humanGaps(text.length) }, at);
+    s.finish("a", { ...stats(30_000), log: keylog(text, new Array(text.length).fill(100)) }, at);
+    s.finish("b", { ...stats(30_000), log: keylog(text, humanGaps(text.length)), tz: 330 }, at);
     expect(s.player("a")!.flags).toEqual(["timing"]);
     expect(s.player("b")!.flags).toEqual([]);
-    expect(s.player("b")!.stats!.dts).toBeUndefined();
+    expect(s.player("b")!.stats!.log).toBeUndefined();
+    expect(s.player("b")!.keylog).toBeTruthy();
+    expect(s.player("b")!.tz).toBe(330);
+  });
+
+  it("flags a keystroke log that doesn't spell the passage", () => {
+    const s = racing(["a"]);
+    const at = COUNTDOWN_MS + 30_000;
+    s.progress("a", len, at);
+    s.finish("a", { ...stats(30_000), log: keylog("x".repeat(len), humanGaps(len)) }, at);
+    expect(s.player("a")!.flags).toContain("keystrokes");
   });
 });
 

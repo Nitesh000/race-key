@@ -2,7 +2,10 @@ import {
   chatReports,
   coinLedger,
   passages,
+  playerKeyStats,
+  playerStatsDaily,
   profiles,
+  raceKeystrokes,
   raceResults,
   races,
   userAchievements,
@@ -14,8 +17,11 @@ import {
   consistency,
   earnedAchievements,
   levelForXp,
+  analyzeKeystrokes,
+  fromBase64,
   raceReward,
   round1,
+  unpackKeystrokes,
   type RewardSummary,
 } from "@race-key/shared";
 import { and, countDistinct, eq, sql } from "drizzle-orm";
@@ -177,6 +183,28 @@ export async function persistRace(db: AnyDb, data: RoomData) {
         .update(raceResults)
         .set({ coinsEarned: reward.coins, xpEarned: reward.xp })
         .where(eq(raceResults.id, rowId));
+      if (p.keylog) {
+        await db
+          .insert(raceKeystrokes)
+          .values({ resultId: rowId, data: fromBase64(p.keylog) })
+          .onConflictDoNothing();
+      }
+    }
+
+    if (clean) {
+      await rollUp(db, uid, {
+        at: data.startsAt + (p.timeMs ?? 0),
+        tz: p.tz,
+        realOpponents: realPlayers - 1,
+        won,
+        podium: r.place <= 3 && data.results.length > 1,
+        wpm: r.wpm,
+        accuracy: r.accuracy,
+        chars: p.pos,
+        errors: p.stats?.errors ?? 0,
+        timeMs: r.timeMs,
+      });
+      if (p.keylog) await rollUpKeys(db, uid, data.passage.text, p.keylog);
     }
 
     const unlocked = await unlockAchievements(db, uid, {
@@ -199,6 +227,90 @@ export async function persistRace(db: AnyDb, data: RoomData) {
     });
   }
   return rewards;
+}
+
+export function localDayHour(at: number, tzMinutes: number) {
+  const local = new Date(at + tzMinutes * 60_000);
+  return { day: local.toISOString().slice(0, 10), hour: local.getUTCHours() };
+}
+
+async function rollUp(
+  db: AnyDb,
+  uid: string,
+  r: {
+    at: number;
+    tz: number;
+    realOpponents: number;
+    won: boolean;
+    podium: boolean;
+    wpm: number;
+    accuracy: number;
+    chars: number;
+    errors: number;
+    timeMs: number;
+  },
+) {
+  const { day, hour } = localDayHour(r.at, r.tz);
+  const real = r.realOpponents > 0 ? 1 : 0;
+  const hours = Array.from({ length: 24 }, (_, h) => (h === hour ? 1 : 0));
+  const slot = hour + 1;
+  await db.execute(sql`
+    insert into ${playerStatsDaily} as d
+      (user_id, day, races, real_races, wins, real_wins, podiums, wpm_sum, best_wpm,
+       accuracy_sum, chars, errors, time_ms, hours)
+    values (${uid}, ${day}, 1, ${real}, ${r.won ? 1 : 0}, ${r.won ? real : 0}, ${r.podium ? 1 : 0},
+            ${r.wpm}, ${r.wpm}, ${r.accuracy}, ${r.chars}, ${r.errors}, ${r.timeMs},
+            ${sql.raw(`'{${hours.join(",")}}'::int[]`)})
+    on conflict (user_id, day) do update set
+      races = d.races + 1,
+      real_races = d.real_races + excluded.real_races,
+      wins = d.wins + excluded.wins,
+      real_wins = d.real_wins + excluded.real_wins,
+      podiums = d.podiums + excluded.podiums,
+      wpm_sum = d.wpm_sum + excluded.wpm_sum,
+      best_wpm = greatest(d.best_wpm, excluded.best_wpm),
+      accuracy_sum = d.accuracy_sum + excluded.accuracy_sum,
+      chars = d.chars + excluded.chars,
+      errors = d.errors + excluded.errors,
+      time_ms = d.time_ms + excluded.time_ms,
+      hours[${sql.raw(String(slot))}] = coalesce(d.hours[${sql.raw(String(slot))}], 0) + 1
+  `);
+}
+
+async function rollUpKeys(db: AnyDb, uid: string, text: string, keylog: string) {
+  const analysis = analyzeKeystrokes(text, unpackKeystrokes(fromBase64(keylog)));
+  if (!analysis.complete) return;
+  const rows = [
+    ...[...analysis.keys].map(([key, a]) => ({ kind: "key" as const, key, ...a })),
+    ...[...analysis.pairs].map(([key, a]) => ({ kind: "pair" as const, key, ...a })),
+    ...[...analysis.missedWords].map(([key, misses]) => ({
+      kind: "word" as const,
+      key: key.slice(0, 40),
+      hits: 0,
+      misses,
+      totalMs: 0,
+    })),
+  ].map((r) => ({ ...r, userId: uid, totalMs: Math.round(r.totalMs) }));
+  if (rows.length === 0) return;
+  await db
+    .insert(playerKeyStats)
+    .values(rows)
+    .onConflictDoUpdate({
+      target: [playerKeyStats.userId, playerKeyStats.kind, playerKeyStats.key],
+      set: {
+        hits: sql`${playerKeyStats.hits} + excluded.hits`,
+        misses: sql`${playerKeyStats.misses} + excluded.misses`,
+        totalMs: sql`${playerKeyStats.totalMs} + excluded.total_ms`,
+      },
+    });
+}
+
+export async function deleteOldKeystrokes(db: AnyDb, days = 90) {
+  const rows = await db
+    .delete(raceKeystrokes)
+    .where(sql`${raceKeystrokes.createdAt} < now() - make_interval(days => ${days})`)
+    .returning({ id: raceKeystrokes.resultId });
+  return rows.length;
 }
 
 async function unlockAchievements(

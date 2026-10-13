@@ -1,6 +1,7 @@
 export * from "./catalog";
 export * from "./emoji";
 export * from "./filter";
+export * from "./keystrokes";
 export * from "./names";
 export * from "./protocol";
 export * from "./random";

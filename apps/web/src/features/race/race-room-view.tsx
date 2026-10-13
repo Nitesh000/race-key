@@ -1,6 +1,6 @@
 "use client";
 
-import { PROGRESS_INTERVAL_MS } from "@race-key/shared";
+import { PROGRESS_INTERVAL_MS, packKeystrokes, toBase64 } from "@race-key/shared";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
@@ -99,7 +99,8 @@ export function RaceRoomView({
           accuracy: s.accuracy,
           errors: s.errors,
           samples: e.samples.slice(0, 1200),
-          dts: e.log.slice(1, 3001).map((k) => Math.round(k.dt)),
+          log: toBase64(packKeystrokes(e.log)),
+          tz: -new Date().getTimezoneOffset(),
         },
       });
       setLocal({ stats: s, samples: [...e.samples], missed: new Set(e.missed) });

@@ -2,16 +2,26 @@ import { PGlite } from "@electric-sql/pglite";
 import { passages } from "@race-key/passages";
 import * as s from "@race-key/db/schema";
 import { authors, books } from "@race-key/passages";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { beforeAll, describe, expect, it } from "vitest";
 import { seedCatalog } from "@race-key/db";
-import { persistRace } from "./persist";
-import { mulberry32 } from "@race-key/shared";
+import { deleteOldKeystrokes, localDayHour, persistRace } from "./persist";
+import { mulberry32, packKeystrokes, toBase64 } from "@race-key/shared";
 import { RaceState } from "./room/state";
 
 const humanGaps = (n: number) => Array.from({ length: n }, (_, i) => 90 + ((i * 37) % 140));
+const keylog = (text: string) =>
+  toBase64(
+    packKeystrokes(
+      Array.from(text, (key, i) => ({
+        kind: "correct" as const,
+        key,
+        dt: humanGaps(text.length)[i]!,
+      })),
+    ),
+  );
 
 const db = drizzle({ client: new PGlite(), schema: s, casing: "snake_case" });
 const passage = passages[0]!;
@@ -56,7 +66,7 @@ function finishedRace(raceId: string) {
       accuracy: 0.97,
       errors: 4,
       samples: [50, 60, 62, 61],
-      dts: humanGaps(passage.text.length),
+      log: keylog(passage.text),
     },
     65_000,
   );
@@ -127,7 +137,7 @@ describe("persistRace", () => {
         accuracy: 1,
         errors: 0,
         samples: [60, 60, 60],
-        dts: humanGaps(passage.text.length),
+        log: keylog(passage.text),
       },
       start + 30_000,
     );
@@ -201,5 +211,53 @@ describe("persistRace", () => {
     const human = rows.find((r) => r.userId === "u2")!;
     expect(human.coinsEarned).toBeGreaterThan(0);
     expect(human.coinsEarned).toBeLessThan(15);
+  });
+
+  it("stores the keystroke log and rolls clean races into daily and per-key totals", async () => {
+    const daily = await db
+      .select()
+      .from(s.playerStatsDaily)
+      .where(eq(s.playerStatsDaily.userId, "r1"));
+    expect(daily).toHaveLength(1);
+    expect(daily[0]!.races).toBe(2);
+    expect(daily[0]!.hours.reduce((a, b) => a + b, 0)).toBe(2);
+    expect(daily[0]!.hours).toHaveLength(24);
+
+    const keys = await db.select().from(s.playerKeyStats).where(eq(s.playerKeyStats.userId, "r1"));
+    const space = keys.find((k) => k.kind === "key" && k.key === " ");
+    const spaces = (passage.text.match(/ /g) ?? []).length;
+    expect(space!.hits).toBe(spaces * 2);
+    expect(keys.some((k) => k.kind === "pair")).toBe(true);
+
+    const logs = await db.select().from(s.raceKeystrokes);
+    expect(logs.length).toBeGreaterThan(0);
+    expect(logs[0]!.data.length).toBeLessThan(passage.text.length * 3.5);
+  });
+
+  it("keeps flagged races out of the totals", async () => {
+    const [before] = await db
+      .select()
+      .from(s.playerStatsDaily)
+      .where(eq(s.playerStatsDaily.userId, "u1"));
+    const data = finishedRace("race-flagged-2");
+    data.players.find((p) => p.id === "u1")!.flags.push("speed");
+    await persistRace(db, data);
+    const [after] = await db
+      .select()
+      .from(s.playerStatsDaily)
+      .where(eq(s.playerStatsDaily.userId, "u1"));
+    expect(after?.races).toBe(before?.races);
+  });
+
+  it("uses the player's local day and hour", () => {
+    const at = Date.UTC(2026, 9, 12, 22, 30);
+    expect(localDayHour(at, 330)).toEqual({ day: "2026-10-13", hour: 4 });
+    expect(localDayHour(at, -300)).toEqual({ day: "2026-10-12", hour: 17 });
+  });
+
+  it("deletes keystroke logs older than 90 days", async () => {
+    await db.execute(sql`update race_keystrokes set created_at = now() - interval '91 days'`);
+    expect(await deleteOldKeystrokes(db)).toBeGreaterThan(0);
+    expect(await db.select().from(s.raceKeystrokes)).toHaveLength(0);
   });
 });

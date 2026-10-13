@@ -18,7 +18,8 @@ export const finishStatsSchema = z.object({
   accuracy: z.number().min(0).max(1),
   errors: z.number().int().nonnegative(),
   samples: z.array(z.number().nonnegative().max(1000)).max(1200),
-  dts: z.array(z.number().int().nonnegative().max(60_000)).max(3000).optional(),
+  log: z.string().max(40_000).optional(),
+  tz: z.number().int().min(-840).max(840).optional(),
 });
 export type FinishStats = z.infer<typeof finishStatsSchema>;
 

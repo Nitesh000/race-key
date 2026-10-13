@@ -2,6 +2,8 @@ import { verifyTicket } from "@race-key/shared";
 import { getServerByName, routePartykitRequest } from "partyserver";
 import { z } from "zod";
 import { sharedSecret, type Secrets } from "./env";
+import { createDb } from "@race-key/db";
+import { deleteOldKeystrokes } from "./persist";
 import { initRoom, newRoomId } from "./rooms";
 
 export { Matchmaker } from "./matchmaker";
@@ -58,5 +60,14 @@ export default {
       onBeforeRequest: () => new Response("not found", { status: 404 }),
     });
     return res ?? new Response("not found", { status: 404 });
+  },
+
+  async scheduled(_controller, env, ctx) {
+    if (!env.DATABASE_URL) return;
+    ctx.waitUntil(
+      deleteOldKeystrokes(createDb(env.DATABASE_URL)).then((n) =>
+        console.log(`deleted ${n} keystroke logs older than 90 days`),
+      ),
+    );
   },
 } satisfies ExportedHandler<WorkerEnv>;
