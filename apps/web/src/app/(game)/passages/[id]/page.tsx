@@ -5,7 +5,10 @@ import { notFound } from "next/navigation";
 import { buttonClass } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { SourceCard } from "@/features/passages/source-card";
+import { LeaderboardTable } from "@/features/leaderboard/leaderboard-table";
+import { getPassageBest } from "@/features/leaderboard/queries";
 import { toClientPassage } from "@/features/passages/types";
+import { hasDb } from "@/lib/db";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -18,6 +21,7 @@ export default async function PassagePage({ params }: Props) {
   const passage = getPassage((await params).id);
   if (!passage) notFound();
   const client = toClientPassage(passage);
+  const best = hasDb() ? await getPassageBest(passage.id) : [];
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">
       <Card>
@@ -36,6 +40,10 @@ export default async function PassagePage({ params }: Props) {
         </div>
       </Card>
       <SourceCard passage={client} />
+      <Card>
+        <CardTitle>Best on this passage</CardTitle>
+        <LeaderboardTable rows={best} empty="Nobody has raced this passage yet." />
+      </Card>
       <Card>
         <CardTitle>Source record</CardTitle>
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
