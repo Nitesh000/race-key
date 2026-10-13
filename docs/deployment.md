@@ -84,6 +84,14 @@ Only on a host that allows commercial use (Cloudflare, or Vercel Pro), never on 
 
 Each webhook event is processed once (`webhook_events`), and refunds remove the skin.
 
+## Ads (optional, commercial)
+
+Same rule as premium skins: only where commercial use is allowed. Set `ADS_ENABLED=true` and,
+for AdSense, `NEXT_PUBLIC_ADSENSE_CLIENT`. Slots are rows in `ad_slots` (placements
+`home-sidebar`, `lobby`, `results`), seeded disabled. Turn one on and fill in either
+`adsense_slot` or `house_image` + `house_link` with `pnpm db:studio`. Advertiser form messages go
+to `ad_inquiries` and to `ADMIN_EMAIL` through Resend.
+
 ## GitHub Actions
 
 | Workflow       | Does                                                                       |

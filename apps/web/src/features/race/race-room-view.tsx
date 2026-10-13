@@ -30,7 +30,15 @@ const hints = {
 
 const publicLobbyHint = "The race starts on its own in a few seconds";
 
-export function RaceRoomView({ host, roomId }: { host: string; roomId: string }) {
+export function RaceRoomView({
+  host,
+  roomId,
+  ads,
+}: {
+  host: string;
+  roomId: string;
+  ads?: { lobby: React.ReactNode; results: React.ReactNode };
+}) {
   const {
     room,
     you,
@@ -215,22 +223,28 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
         }
         below={
           room.phase === "lobby" ? (
-            <LobbyPanel
-              room={room}
-              you={you}
-              emojis={emojis}
-              chat={chatBox}
-              onStart={() => send({ t: "start" })}
-            />
+            <>
+              <LobbyPanel
+                room={room}
+                you={you}
+                emojis={emojis}
+                chat={chatBox}
+                onStart={() => send({ t: "start" })}
+              />
+              {ads?.lobby}
+            </>
           ) : room.phase === "done" || local ? (
-            <ResultsPanel
-              room={room}
-              you={you}
-              local={local}
-              rewards={rewards}
-              chat={room.phase === "done" ? chatBox : null}
-              onAgain={() => send({ t: "again" })}
-            />
+            <>
+              <ResultsPanel
+                room={room}
+                you={you}
+                local={local}
+                rewards={rewards}
+                chat={room.phase === "done" ? chatBox : null}
+                onAgain={() => send({ t: "again" })}
+              />
+              {ads?.results}
+            </>
           ) : null
         }
       />

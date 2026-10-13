@@ -61,6 +61,15 @@ await db
 
 await seedCatalog(db);
 
+await db
+  .insert(s.adSlots)
+  .values([
+    { id: "home-sidebar-1", placement: "home-sidebar", width: 300, height: 250 },
+    { id: "lobby-1", placement: "lobby", width: 728, height: 90 },
+    { id: "results-1", placement: "results", width: 728, height: 90 },
+  ])
+  .onConflictDoNothing();
+
 await client.end();
 console.log(
   `seeded ${authors.length} authors, ${books.length} books, ${passages.length} passages, skins and achievements`,
