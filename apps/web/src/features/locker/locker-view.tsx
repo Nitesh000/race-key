@@ -31,6 +31,7 @@ import {
   selectTheme,
   type ActionResult,
 } from "./actions";
+import { PremiumButton } from "@/features/payments/premium-button";
 import type { LockerData } from "./queries";
 
 type Tab = "racers" | "carets" | "tracks" | "themes" | "emoji" | "achievements";
@@ -44,7 +45,15 @@ const tabs: { value: Tab; label: string }[] = [
   { value: "achievements", label: "Achievements" },
 ];
 
-export function LockerView({ data, premium }: { data: LockerData; premium: React.ReactNode }) {
+export function LockerView({
+  data,
+  payments,
+  order,
+}: {
+  data: LockerData;
+  payments: "off" | "guest" | "on";
+  order: { status: string; item: string } | null;
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("racers");
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +127,7 @@ export function LockerView({ data, premium }: { data: LockerData; premium: React
             Buy for {s.price} coins
           </Button>
         ) : s.priceType === "premium" ? (
-          premium
+          <PremiumButton skinId={s.id} price={s.price} state={payments} />
         ) : (
           <span className="text-center text-xs text-muted">Locked</span>
         )}
@@ -141,6 +150,15 @@ export function LockerView({ data, premium }: { data: LockerData; premium: React
       {data.isGuest && (
         <p className="rounded-lg bg-surface-2 px-4 py-2 text-sm text-muted">
           You&apos;re playing as a guest. Sign up to keep your coins and skins on every device.
+        </p>
+      )}
+      {order && (
+        <p role="status" className="rounded-lg bg-surface-2 px-4 py-2 text-sm">
+          {order.status === "paid"
+            ? `Thanks! ${order.item} is in your locker.`
+            : order.status === "pending"
+              ? "Payment received. Your skin appears here in a moment, refresh if it doesn't."
+              : "That payment didn't go through. You weren't charged."}
         </p>
       )}
       {error && (

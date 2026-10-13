@@ -87,6 +87,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      dodopayments:
+        specifier: ^2.54.2
+        version: 2.54.2
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@cloudflare/workers-types@5.20261013.1)(@electric-sql/pglite@0.5.9)(@neondatabase/serverless@1.2.0)(kysely@0.29.6)(postgres@3.4.9)
@@ -112,6 +115,9 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.9
+        version: 0.5.9
       '@opennextjs/cloudflare':
         specifier: ^1.20.11
         version: 1.20.11(next@16.4.0(@types/node@22.20.5)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.150.0(@cloudflare/workers-types@5.20261013.1)(@types/node@22.20.5))
@@ -2683,6 +2689,10 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  dodopayments@2.54.2:
+    resolution: {integrity: sha512-xL0Q3lxgGWT9TBq59sWFsUA4B6GiBd7aHUoLv5n72W5JeGJb3wzV6Y3GSomh35cqJIp+q15CkoRFW+1a3t9/aw==}
+    hasBin: true
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -6493,6 +6503,10 @@ snapshots:
   depd@2.0.0: {}
 
   detect-libc@2.1.2: {}
+
+  dodopayments@2.54.2:
+    dependencies:
+      standardwebhooks: 1.1.1
 
   dom-serializer@2.0.0:
     dependencies:

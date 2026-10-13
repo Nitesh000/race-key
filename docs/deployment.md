@@ -71,6 +71,19 @@ Note the `https://race-key-realtime.<you>.workers.dev` URL it prints.
    Vercel's Git integration. If your Neon region isn't `us-east-2`, change `regions` in
    `vercel.json` to the closest Vercel region (Hobby allows one).
 
+## Premium skins (optional, commercial)
+
+Only on a host that allows commercial use (Cloudflare, or Vercel Pro), never on Vercel Hobby.
+
+1. In Dodo Payments (test mode first), create one product per premium skin (`rocket`, `ufo`,
+   `dragon`) at the prices in `packages/shared/src/catalog.ts`.
+2. Add a webhook pointing at `https://<your site>/api/payments/webhook` for `payment.succeeded`,
+   `payment.failed`, `payment.cancelled` and `refund.succeeded`.
+3. Set `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY`, `DODO_PAYMENTS_ENVIRONMENT`
+   (`test_mode` or `live_mode`) and `DODO_PRODUCTS` (JSON map of skin id to product id).
+
+Each webhook event is processed once (`webhook_events`), and refunds remove the skin.
+
 ## GitHub Actions
 
 | Workflow       | Does                                                                       |
