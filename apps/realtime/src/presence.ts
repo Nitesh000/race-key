@@ -1,7 +1,7 @@
 import { ticketSchema, type PresenceMessage, type PresenceStatus } from "@race-key/shared";
 import { Server, type Connection, type ConnectionContext } from "partyserver";
 import { z } from "zod";
-import type { Secrets } from "./env";
+import { readPlayer, type Secrets } from "./env";
 
 type ConnState = { uid: string };
 
@@ -21,9 +21,7 @@ export class Presence extends Server<Env & Secrets> {
   }
 
   override onConnect(conn: Connection<ConnState>, ctx: ConnectionContext) {
-    const parsed = ticketSchema.safeParse(
-      JSON.parse(ctx.request.headers.get("x-rk-player") ?? "null"),
-    );
+    const parsed = ticketSchema.safeParse(readPlayer(ctx.request));
     if (!parsed.success || !parsed.data.uid) {
       conn.close(4401, "unauthorized");
       return;

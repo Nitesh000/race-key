@@ -54,7 +54,7 @@ export default {
         const ticket = await verifyTicket(token, secret);
         if (!ticket) return new Response("unauthorized", { status: 401 });
         const headers = new Headers(r.headers);
-        headers.set("x-rk-player", JSON.stringify(ticket));
+        headers.set("x-rk-player", encodeURIComponent(JSON.stringify(ticket)));
         return new Request(r, { headers });
       },
       onBeforeRequest: () => new Response("not found", { status: 404 }),

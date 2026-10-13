@@ -9,3 +9,11 @@ export function sharedSecret(env: Env & Secrets) {
   if (env.REALTIME_SHARED_SECRET) return env.REALTIME_SHARED_SECRET;
   return (env.ENVIRONMENT as string) === "development" ? DEV_SECRET : null;
 }
+
+export function readPlayer(req: Request): unknown {
+  try {
+    return JSON.parse(decodeURIComponent(req.headers.get("x-rk-player") ?? "null"));
+  } catch {
+    return null;
+  }
+}

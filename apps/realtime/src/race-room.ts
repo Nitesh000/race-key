@@ -1,4 +1,4 @@
-import { createDb } from "@race-key/db";
+import { createDb, type AnyDb } from "@race-key/db";
 import { pickRacePassage } from "@race-key/passages/race";
 import {
   PROGRESS_INTERVAL_MS,
@@ -15,7 +15,7 @@ import {
   type WSMessage,
 } from "partyserver";
 import { z } from "zod";
-import type { Secrets } from "./env";
+import { readPlayer, type Secrets } from "./env";
 import { persistRace, reportChat } from "./persist";
 import { RaceState, type RoomData } from "./room/state";
 
@@ -34,6 +34,7 @@ export class RaceRoom extends Server<Env & Secrets> {
   static override options = { hibernate: true };
 
   room: RaceState | null = null;
+  private dbClient: AnyDb | null = null;
   private clock: ReturnType<typeof setInterval> | null = null;
   private sentPos = new Map<string, number>();
 
@@ -77,9 +78,7 @@ export class RaceRoom extends Server<Env & Secrets> {
   }
 
   override onConnect(conn: Connection<ConnState>, ctx: ConnectionContext) {
-    const parsed = ticketSchema.safeParse(
-      JSON.parse(ctx.request.headers.get("x-rk-player") ?? "null"),
-    );
+    const parsed = ticketSchema.safeParse(readPlayer(ctx.request));
     if (!parsed.success) return this.reject(conn, "unauthorized", "Missing player ticket.");
     if (!this.room) return this.reject(conn, "not_found", "This room does not exist.");
     const ticket: Ticket = parsed.data;
@@ -175,12 +174,12 @@ export class RaceRoom extends Server<Env & Secrets> {
     const m = room.chatMessage(messageId);
     if (!m || m.from === sub) return;
     this.send(conn, { t: "reported", id: messageId });
-    const url = this.env.DATABASE_URL;
-    if (!url) return;
+    const db = this.db();
+    if (!db) return;
     const reporter = room.player(sub);
     const target = room.player(m.from);
     this.ctx.waitUntil(
-      reportChat(createDb(url), {
+      reportChat(db, {
         reporterId: reporter?.uid ?? null,
         reportedName: m.name,
         reportedUserId: target?.uid ?? null,
@@ -221,14 +220,21 @@ export class RaceRoom extends Server<Env & Secrets> {
     );
   }
 
+  private db() {
+    const url = this.env.DATABASE_URL;
+    if (!url) return null;
+    this.dbClient ??= createDb(url);
+    return this.dbClient;
+  }
+
   private onEnded() {
     const room = this.room;
-    const url = this.env.DATABASE_URL;
-    if (!room || !url || room.data.persisted) return;
+    const db = this.db();
+    if (!room || !db || room.data.persisted) return;
     room.data.persisted = true;
     const data = structuredClone(room.data);
     this.ctx.waitUntil(
-      persistRace(createDb(url), data)
+      persistRace(db, data)
         .then((rewards) => {
           if (!rewards) return;
           for (const conn of this.getConnections<ConnState>()) {
