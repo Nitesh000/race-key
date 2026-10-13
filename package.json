@@ -17,7 +17,8 @@
     "db:push": "pnpm --filter @race-key/db push",
     "db:migrate": "pnpm --filter @race-key/db migrate",
     "db:seed": "pnpm --filter @race-key/db seed",
-    "db:studio": "pnpm --filter @race-key/db studio"
+    "db:studio": "pnpm --filter @race-key/db studio",
+    "e2e": "pnpm --filter @race-key/e2e e2e"
   },
   "devDependencies": {
     "prettier": "^3.9.10",

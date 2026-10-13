@@ -47,6 +47,9 @@ function createAuth() {
     session: {
       cookieCache: { enabled: true, maxAge: 300 },
     },
+    rateLimit: {
+      enabled: env("AUTH_RATE_LIMIT") !== "off" && process.env.NODE_ENV === "production",
+    },
     databaseHooks: {
       user: {
         create: {

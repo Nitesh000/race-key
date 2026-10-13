@@ -1,0 +1,7 @@
+{
+  "extends": "@race-key/config/tsconfig/library.json",
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2023"]
+  },
+  "include": ["specs", "scripts", "*.ts"]
+}

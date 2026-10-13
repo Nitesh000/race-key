@@ -102,9 +102,9 @@ to `ad_inquiries` and to `ADMIN_EMAIL` through Resend.
 | `deploy.yml`   | on `main`: migrate the database and deploy the race server                 |
 | `rollback.yml` | rolls the race server (and the web app on Cloudflare) back one version     |
 
-Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, `NEON_API_KEY`,
-`TURBO_TOKEN` (optional). Variables: `NEON_PROJECT_ID`, `REALTIME_URL`, `PREVIEW_REALTIME_URL`,
-`TURBO_TEAM` (optional), `WEB_HOST` (only set to `cloudflare` when moving off Vercel).
+Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, `TURBO_TOKEN`
+(optional). Variables: `REALTIME_URL`, `PREVIEW_REALTIME_URL`, `TURBO_TEAM` (optional),
+`WEB_HOST` (only set to `cloudflare` when moving off Vercel).
 
 Roll back the web app on Vercel from its dashboard (Deployments → Promote to Production).
 

@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "dev:db": "pglite-server --db=.pglite --port=5433 --max-connections=10"
+    "dev:db": "tsx scripts/local-db.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -26,12 +26,12 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",
-    "@electric-sql/pglite-socket": "^0.2.12",
     "@race-key/config": "workspace:*",
     "@race-key/passages": "workspace:*",
     "@race-key/themes": "workspace:*",
     "@types/node": "^22.15.0",
     "drizzle-kit": "^0.31.11",
+    "embedded-postgres": "^18.4.0-beta.17",
     "eslint": "^9.39.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",

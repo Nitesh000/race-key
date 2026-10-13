@@ -9,6 +9,8 @@ export { schema };
 export { seedCatalog } from "./catalog";
 export * from "./schema";
 
+const localOptions = { max: 5, idle_timeout: 10, onnotice: () => {} };
+
 function isLocal(url: string) {
   const host = new URL(url).hostname;
   return host === "localhost" || host === "127.0.0.1";
@@ -19,7 +21,7 @@ export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;
 export function createDb(url: string): AnyDb {
   if (isLocal(url)) {
     return drizzlePg({
-      client: postgres(url, { max: 1, onnotice: () => {} }),
+      client: postgres(url, localOptions),
       schema,
       casing: "snake_case",
     });

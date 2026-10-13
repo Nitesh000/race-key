@@ -19,10 +19,9 @@ Free-to-play multiplayer typing races on passages from real books.
 pnpm install
 cp apps/web/.env.example apps/web/.env.local
 
-# optional local database instead of Neon
+# optional local Postgres instead of Neon (downloads Postgres once, migrates and seeds)
 pnpm --filter @race-key/db dev:db
-DATABASE_URL=postgres://postgres@localhost:5433/postgres pnpm --filter @race-key/db migrate
-DATABASE_URL=postgres://postgres@localhost:5433/postgres pnpm --filter @race-key/db seed
+# then set DATABASE_URL=postgres://postgres:postgres@localhost:5433/postgres in apps/web/.env.local
 
 pnpm dev
 ```
@@ -31,6 +30,14 @@ pnpm dev
 sides fall back to the same shared secret, so races work with no extra setup. To save race
 results locally, copy `apps/realtime/.dev.vars.example` to `apps/realtime/.dev.vars` and set
 `DATABASE_URL` there too.
+
+End-to-end tests run on Chromium, WebKit and Firefox and start everything they need:
+
+```sh
+pnpm turbo run build --filter=@race-key/web
+pnpm --filter @race-key/e2e exec playwright install
+pnpm e2e
+```
 
 Practice mode works without a database. Accounts, guests, profiles and saved results need
 `DATABASE_URL`.
