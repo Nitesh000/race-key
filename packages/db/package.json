@@ -31,7 +31,7 @@
     "@race-key/themes": "workspace:*",
     "@types/node": "^22.15.0",
     "drizzle-kit": "^0.31.11",
-    "eslint": "^9.39.0",
+    "eslint": "^10.12.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "vitest": "^5.0.4"
