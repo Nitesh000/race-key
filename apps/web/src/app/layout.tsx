@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { caretStyles, lanePatterns } from "@race-key/shared";
 import { SettingsBoot } from "@/features/settings/settings-boot";
+import { PresenceClient } from "@/features/challenges/presence-client";
+import { realtimeUrl } from "@/lib/env";
 import { getViewer } from "@/lib/session";
 import { MODE_COOKIE, THEME_COOKIE, parseMode, parseTheme } from "@/features/themes/cookies";
 import { ThemeProvider } from "@/features/themes/theme-provider";
@@ -33,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="bg-bg font-sans text-text">
         <ThemeProvider initialTheme={theme} initialMode={mode}>
           <SettingsBoot equipped={equipped ?? undefined} />
+          {viewer && <PresenceClient host={realtimeUrl} />}
           {children}
         </ThemeProvider>
       </body>

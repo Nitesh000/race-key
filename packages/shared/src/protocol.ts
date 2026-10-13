@@ -121,3 +121,15 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
     return null;
   }
 }
+
+export type PresenceStatus = "online" | "racing" | "offline";
+
+export type ChallengeNotice = {
+  id: string;
+  from: string;
+  roomId: string;
+  expiresAt: number;
+};
+
+export type PresenceMessage =
+  { t: "challenge"; c: ChallengeNotice } | { t: "challenge-closed"; id: string };

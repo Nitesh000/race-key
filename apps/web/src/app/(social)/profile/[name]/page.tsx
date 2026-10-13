@@ -2,7 +2,11 @@ import { levelProgress } from "@race-key/shared";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
+import { ChallengeButton } from "@/features/challenges/challenge-button";
+import { FriendButton } from "@/features/friends/friend-button";
+import { relationTo } from "@/features/friends/queries";
 import { getProfileByName, getProfileSummary } from "@/features/profile/queries";
+import { getViewer } from "@/lib/session";
 import { hasDb } from "@/lib/db";
 
 type Props = { params: Promise<{ name: string }> };
@@ -28,6 +32,8 @@ export default async function ProfilePage({ params }: Props) {
   const { profile } = row;
   const summary = await getProfileSummary(profile.userId);
   const progress = levelProgress(profile.xp);
+  const viewer = await getViewer();
+  const relation = viewer ? await relationTo(viewer.id, profile.userId) : "none";
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-10">
@@ -57,6 +63,18 @@ export default async function ProfilePage({ params }: Props) {
             {progress.into} / {progress.needed} xp to level {progress.level + 1}
           </p>
         </div>
+        {viewer && relation !== "self" && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {!viewer.isGuest && (
+              <FriendButton
+                relation={relation}
+                userId={profile.userId}
+                username={profile.username}
+              />
+            )}
+            <ChallengeButton to={profile.userId} />
+          </div>
+        )}
       </div>
       <Card>
         <CardTitle>Summary</CardTitle>

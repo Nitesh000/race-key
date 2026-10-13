@@ -6,6 +6,7 @@ const links = [
   { href: "/race", label: "Race" },
   { href: "/practice", label: "Practice" },
   { href: "/locker", label: "Locker" },
+  { href: "/friends", label: "Friends" },
   { href: "/settings", label: "Settings" },
 ];
 

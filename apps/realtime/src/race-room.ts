@@ -7,7 +7,13 @@ import {
   type ServerMessage,
   type Ticket,
 } from "@race-key/shared";
-import { Server, type Connection, type ConnectionContext, type WSMessage } from "partyserver";
+import {
+  Server,
+  getServerByName,
+  type Connection,
+  type ConnectionContext,
+  type WSMessage,
+} from "partyserver";
 import { z } from "zod";
 import type { Secrets } from "./env";
 import { persistRace, reportChat } from "./persist";
@@ -187,11 +193,32 @@ export class RaceRoom extends Server<Env & Secrets> {
   private loop() {
     if (!this.room) return;
     const now = Date.now();
+    const before = this.room.phase;
     const { changed, ended } = this.room.tick(now);
+    if (before !== "racing" && this.room.phase === "racing") this.setRacing(true);
+    if (ended) this.setRacing(false);
     if (changed) this.changed();
     for (const taunt of this.room.drainTaunts()) this.broadcastJson({ t: "taunt", ...taunt });
     if (this.room.phase === "racing" || ended) this.broadcastTick(now);
     if (ended) this.onEnded();
+  }
+
+  private setRacing(racing: boolean) {
+    const uids = this.room!.humans()
+      .map((p) => p.uid)
+      .filter((u): u is string => !!u);
+    if (uids.length === 0) return;
+    this.ctx.waitUntil(
+      getServerByName(this.env.Presence, "global")
+        .then((stub) =>
+          stub.fetch("https://presence/activity", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ uids, racing }),
+          }),
+        )
+        .catch((e) => console.error("presence update failed", e)),
+    );
   }
 
   private onEnded() {

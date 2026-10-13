@@ -1,10 +1,11 @@
 import { verifyTicket } from "@race-key/shared";
-import { routePartykitRequest } from "partyserver";
+import { getServerByName, routePartykitRequest } from "partyserver";
 import { z } from "zod";
 import { sharedSecret, type Secrets } from "./env";
 import { initRoom, newRoomId } from "./rooms";
 
 export { Matchmaker } from "./matchmaker";
+export { Presence } from "./presence";
 export { RaceRoom } from "./race-room";
 
 type WorkerEnv = Env & Secrets;
@@ -23,6 +24,13 @@ export default {
 
     const secret = sharedSecret(env);
     if (!secret) return Response.json({ error: "server is not configured" }, { status: 503 });
+
+    if (req.method === "POST" && url.pathname.startsWith("/presence/")) {
+      if (!authorized(req, secret))
+        return Response.json({ error: "unauthorized" }, { status: 401 });
+      const stub = await getServerByName(env.Presence, "global");
+      return stub.fetch(new Request(`https://presence${url.pathname}`, req));
+    }
 
     if (req.method === "POST" && (url.pathname === "/rooms" || url.pathname === "/match")) {
       if (!authorized(req, secret))

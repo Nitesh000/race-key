@@ -10,11 +10,13 @@
     "bindings": [
       { "name": "RaceRoom", "class_name": "RaceRoom" },
       { "name": "Matchmaker", "class_name": "Matchmaker" },
+      { "name": "Presence", "class_name": "Presence" },
     ],
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["RaceRoom"] },
     { "tag": "v2", "new_sqlite_classes": ["Matchmaker"] },
+    { "tag": "v3", "new_sqlite_classes": ["Presence"] },
   ],
   "env": {
     "preview": {
@@ -24,6 +26,7 @@
         "bindings": [
           { "name": "RaceRoom", "class_name": "RaceRoom" },
           { "name": "Matchmaker", "class_name": "Matchmaker" },
+          { "name": "Presence", "class_name": "Presence" },
         ],
       },
     },
