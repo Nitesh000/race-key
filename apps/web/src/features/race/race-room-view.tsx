@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChatBox } from "@/features/chat/chat-box";
+import { averageWpm, pushRecent } from "@/features/practice/history";
 import { useSettings } from "@/features/settings/store";
 import { EmojiTray } from "@/features/taunts/emoji-tray";
 import { createTauntKeys } from "@/features/taunts/taunt-keys";
@@ -103,7 +104,9 @@ export function RaceRoomView({
           tz: -new Date().getTimezoneOffset(),
         },
       });
-      setLocal({ stats: s, samples: [...e.samples], missed: new Set(e.missed) });
+      const average = averageWpm();
+      pushRecent({ wpm: s.wpm, accuracy: s.accuracy, at: Date.now() });
+      setLocal({ stats: s, samples: [...e.samples], missed: new Set(e.missed), average });
     },
     [send],
   );

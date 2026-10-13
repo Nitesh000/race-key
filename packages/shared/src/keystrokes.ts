@@ -117,12 +117,12 @@ export function analyzeKeystrokes(text: string, log: LoggedKey[]): KeystrokeAnal
         fixMs.push(clock - errorStartedAt);
         errorStartedAt = null;
       }
-      bump(keys, expected.toLowerCase(), true, k.dt);
+      bump(keys, expected, true, k.dt);
       if (pos > 0) bump(pairs, (text[pos - 1]! + expected).toLowerCase(), true, k.dt);
       pos++;
     } else if (k.kind === "wrong") {
       if (stack === 0 && expected !== undefined) {
-        bump(keys, expected.toLowerCase(), false, 0);
+        bump(keys, expected, false, 0);
         if (pos > 0) bump(pairs, (text[pos - 1]! + expected).toLowerCase(), false, 0);
         const word = wordAt(text, pos);
         const start = text.lastIndexOf(" ", pos) + 1;

@@ -1,5 +1,6 @@
 import { levelProgress } from "@race-key/shared";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ChallengeButton } from "@/features/challenges/challenge-button";
@@ -77,7 +78,15 @@ export default async function ProfilePage({ params }: Props) {
         )}
       </div>
       <Card>
-        <CardTitle>Summary</CardTitle>
+        <div className="flex items-baseline justify-between">
+          <CardTitle>Summary</CardTitle>
+          <Link
+            href={`/profile/${profile.username}/stats`}
+            className="text-sm text-accent hover:underline"
+          >
+            Detailed stats →
+          </Link>
+        </div>
         <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           <Stat label="Avg wpm (last 10)" value={Math.round(summary.last10)} />
           <Stat label="Avg wpm (all time)" value={Math.round(summary.avgWpm)} />

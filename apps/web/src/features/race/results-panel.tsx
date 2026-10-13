@@ -15,7 +15,12 @@ import { formatTime } from "@/features/typing/live-stats";
 import type { TypingStats } from "@/features/typing/engine";
 import { cn } from "@/lib/cn";
 
-export type LocalFinish = { stats: TypingStats; samples: number[]; missed: Set<number> };
+export type LocalFinish = {
+  stats: TypingStats;
+  samples: number[];
+  missed: Set<number>;
+  average?: number;
+};
 
 export function ResultsPanel({
   room,
@@ -83,7 +88,13 @@ export function ResultsPanel({
                 racers: room.players.length,
               }}
             />
-            <SpeedChart samples={local.samples} />
+            {local.average !== undefined && (
+              <p className="text-sm text-muted">
+                {local.stats.wpm >= local.average ? "Faster" : "Slower"} than your recent average by{" "}
+                {Math.abs(Math.round(local.stats.wpm - local.average))} wpm.
+              </p>
+            )}
+            <SpeedChart samples={local.samples} average={local.average} />
             <div>
               <h3 className="mb-2 text-sm font-medium text-muted">Mistakes</h3>
               <MistakesView text={room.passage.text} missed={local.missed} />
