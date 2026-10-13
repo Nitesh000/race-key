@@ -5,6 +5,7 @@ import { UserMenu } from "@/features/auth/user-menu";
 const links = [
   { href: "/race", label: "Race" },
   { href: "/practice", label: "Practice" },
+  { href: "/locker", label: "Locker" },
   { href: "/settings", label: "Settings" },
 ];
 

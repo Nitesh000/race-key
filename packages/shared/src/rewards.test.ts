@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { earnedAchievements, skins } from "./catalog";
+import { earnedAchievements, getSkin, ownsSkin, skins } from "./catalog";
 import { botMultiplier, levelForXp, levelProgress, raceReward, xpForLevel } from "./rewards";
 
 const base = {
@@ -76,5 +76,16 @@ describe("catalog", () => {
       }),
     );
     for (const s of skins) if (s.achievement) expect(ids.has(s.achievement)).toBe(true);
+  });
+
+  it("decides ownership by price type", () => {
+    const o = { owned: new Set<string>(), level: 5, achievements: new Set(["wpm-100"]) };
+    expect(ownsSkin(getSkin("hatchback")!, o)).toBe(true);
+    expect(ownsSkin(getSkin("sedan")!, o)).toBe(false);
+    expect(ownsSkin(getSkin("sedan")!, { ...o, owned: new Set(["sedan"]) })).toBe(true);
+    expect(ownsSkin(getSkin("van")!, o)).toBe(true);
+    expect(ownsSkin(getSkin("horse")!, o)).toBe(false);
+    expect(ownsSkin(getSkin("cheetah")!, o)).toBe(true);
+    expect(ownsSkin(getSkin("rocket")!, o)).toBe(false);
   });
 });

@@ -181,6 +181,7 @@ export function RaceRoomView({ host, roomId }: { host: string; roomId: string })
             store={progress}
             taunts={taunts}
             display={display}
+            lane={settings.lane}
             overlay={<StripOverlay room={room} place={me?.place ?? null} serverNow={serverNow} />}
           />
         }

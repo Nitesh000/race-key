@@ -3,7 +3,8 @@
 import { useSyncExternalStore } from "react";
 
 export type TypingFont = "jetbrains" | "plex" | "inter" | "literata";
-export type CaretStyle = "line" | "block" | "underline";
+export type CaretStyle = "line" | "block" | "underline" | "thick" | "glow";
+export type LanePattern = "plain" | "dashes" | "checker" | "stars";
 export type TrackDisplay = "full" | "minimal" | "hidden";
 
 export type Settings = {
@@ -14,6 +15,7 @@ export type Settings = {
   reducedMotion: boolean;
   track: TrackDisplay;
   muteTaunts: boolean;
+  lane: LanePattern;
 };
 
 export const defaultSettings: Settings = {
@@ -24,6 +26,7 @@ export const defaultSettings: Settings = {
   reducedMotion: false,
   track: "full",
   muteTaunts: false,
+  lane: "plain",
 };
 
 export const fontFamilies: Record<TypingFont, { label: string; css: string }> = {

@@ -100,3 +100,44 @@
     opacity: 0;
   }
 }
+
+.lane-dashes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 12px,
+    color-mix(in srgb, var(--racer-outline) 22%, transparent) 12px 20px
+  );
+  background-size: 100% 2px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.lane-checker {
+  background-image: conic-gradient(
+    color-mix(in srgb, var(--racer-outline) 10%, transparent) 25%,
+    transparent 0 50%,
+    color-mix(in srgb, var(--racer-outline) 10%, transparent) 0 75%,
+    transparent 0
+  );
+  background-size: 8px 8px;
+}
+
+.lane-stars {
+  background-image:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent) 55%, transparent) 1px,
+      transparent 1.5px
+    ),
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--racer-outline) 30%, transparent) 0.8px,
+      transparent 1.2px
+    );
+  background-size:
+    23px 13px,
+    17px 11px;
+  background-position:
+    0 2px,
+    9px 6px;
+}

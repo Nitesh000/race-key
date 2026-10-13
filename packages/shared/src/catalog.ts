@@ -164,13 +164,36 @@ export function earnedAchievements(ctx: AchievementContext): string[] {
   return out;
 }
 
-export function canUnlock(
-  s: Skin,
-  opts: { level: number; achievements: Set<string> },
-): "owned-free" | "buy" | "level" | "achievement" | "premium" | "unlocked" {
-  if (s.priceType === "free") return "owned-free";
-  if (s.priceType === "coins") return "buy";
-  if (s.priceType === "premium") return "premium";
-  if (s.priceType === "level") return opts.level >= s.price ? "unlocked" : "level";
-  return s.achievement && opts.achievements.has(s.achievement) ? "unlocked" : "achievement";
+export type Ownership = { owned: Set<string>; level: number; achievements: Set<string> };
+
+export function ownsSkin(s: Skin, o: Ownership) {
+  if (s.priceType === "free" || o.owned.has(s.id)) return true;
+  if (s.priceType === "level") return o.level >= s.price;
+  if (s.priceType === "achievement") return !!s.achievement && o.achievements.has(s.achievement);
+  return false;
 }
+
+export function lockReason(s: Skin) {
+  if (s.priceType === "coins") return `${s.price} coins`;
+  if (s.priceType === "level") return `Level ${s.price}`;
+  if (s.priceType === "premium") return `$${(s.price / 100).toFixed(2)}`;
+  if (s.priceType === "achievement") {
+    return achievements.find((a) => a.id === s.achievement)?.name ?? "Achievement";
+  }
+  return "Free";
+}
+
+export const caretStyles: Record<string, string> = {
+  "caret-line": "line",
+  "caret-block": "block",
+  "caret-underline": "underline",
+  "caret-thick": "thick",
+  "caret-glow": "glow",
+};
+
+export const lanePatterns: Record<string, string> = {
+  "track-plain": "plain",
+  "track-dashes": "dashes",
+  "track-checker": "checker",
+  "track-stars": "stars",
+};

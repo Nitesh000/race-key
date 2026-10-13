@@ -43,6 +43,19 @@
   border-radius: 1px;
 }
 
+.caret-thick {
+  width: 3px;
+  border-radius: 2px;
+}
+
+.caret-glow {
+  width: 2px;
+  border-radius: 1px;
+  box-shadow:
+    0 0 6px 1px var(--caret),
+    0 0 14px 2px color-mix(in srgb, var(--caret) 45%, transparent);
+}
+
 .caret-block {
   opacity: 0.35;
   border-radius: 2px;

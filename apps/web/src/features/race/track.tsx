@@ -31,6 +31,7 @@ type Props = {
   store: ProgressStore;
   taunts: TauntStore;
   display: TrackDisplay;
+  lane?: string;
   overlay?: React.ReactNode;
 };
 
@@ -53,6 +54,7 @@ export const Track = memo(function Track({
   store,
   taunts,
   display,
+  lane = "plain",
   overlay,
 }: Props) {
   const bubbles = useSyncExternalStore(taunts.subscribe, taunts.get, taunts.get);
@@ -121,6 +123,7 @@ export const Track = memo(function Track({
               className={cn(
                 "relative h-full overflow-hidden rounded-full",
                 isYou ? "bg-lane-you" : "bg-lane",
+                isYou && lane !== "plain" && `lane-${lane}`,
               )}
             >
               {display === "minimal" ? (

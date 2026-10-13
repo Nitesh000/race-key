@@ -14,7 +14,9 @@ function isLocal(url: string) {
   return host === "localhost" || host === "127.0.0.1";
 }
 
-export function createDb(url: string) {
+export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;
+
+export function createDb(url: string): AnyDb {
   if (isLocal(url)) {
     return drizzlePg({
       client: postgres(url, { max: 1, onnotice: () => {} }),
@@ -25,6 +27,4 @@ export function createDb(url: string) {
   return drizzleNeon({ client: neon(url), schema, casing: "snake_case" });
 }
 
-export type Db = ReturnType<typeof createDb>;
-
-export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;
+export type Db = AnyDb;

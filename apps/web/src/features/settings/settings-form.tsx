@@ -62,9 +62,11 @@ export function SettingsForm() {
               value={s.caret}
               onChange={(caret) => updateSettings({ caret })}
               options={[
-                { value: "line", label: "Line" },
-                { value: "block", label: "Block" },
-                { value: "underline", label: "Underline" },
+                { value: "line" as const, label: "Line" },
+                { value: "block" as const, label: "Block" },
+                { value: "underline" as const, label: "Underline" },
+                ...(s.caret === "thick" ? [{ value: "thick" as const, label: "Thick" }] : []),
+                ...(s.caret === "glow" ? [{ value: "glow" as const, label: "Glow" }] : []),
               ]}
             />
           </Row>

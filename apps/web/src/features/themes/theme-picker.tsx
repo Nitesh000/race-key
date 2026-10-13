@@ -35,25 +35,52 @@ const modeLabels: Record<ModePreference, string> = {
   dark: "Dark",
 };
 
-export function ThemePicker({ owned }: { owned?: Set<string> }) {
+export function themeUnlocked(
+  t: { id: string; priceType: string; price?: number },
+  owned: Set<string> | undefined,
+  level: number,
+) {
+  if (!owned || t.priceType === "free" || owned.has(t.id)) return true;
+  return t.priceType === "level" && level >= (t.price ?? 0);
+}
+
+export function ThemePicker({
+  owned,
+  level = 1,
+  onPick,
+  onBuy,
+}: {
+  owned?: Set<string>;
+  level?: number;
+  onPick?: (theme: string, mode: ModePreference) => void;
+  onBuy?: (theme: string) => void;
+}) {
   const { theme, mode, setTheme, setMode } = useTheme();
   return (
     <div className="space-y-4">
       <Segmented
         label="Color mode"
         value={mode}
-        onChange={setMode}
+        onChange={(m) => {
+          setMode(m);
+          onPick?.(theme, m);
+        }}
         options={modePreferences.map((m) => ({ value: m, label: modeLabels[m] }))}
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {themes.map((t) => {
-          const locked = t.priceType !== "free" && owned && !owned.has(t.id);
+          const locked = !themeUnlocked(t, owned, level);
+          const buyable = locked && t.priceType === "coins" && !!onBuy;
           return (
             <button
               key={t.id}
               type="button"
-              disabled={locked}
-              onClick={() => setTheme(t.id)}
+              disabled={locked && !buyable}
+              onClick={() => {
+                if (buyable) return onBuy(t.id);
+                setTheme(t.id);
+                onPick?.(t.id, mode);
+              }}
               aria-pressed={theme === t.id}
               className={cn(
                 "rounded-xl border bg-surface p-3 text-left transition-colors disabled:opacity-60",
@@ -65,7 +92,7 @@ export function ThemePicker({ owned }: { owned?: Set<string> }) {
               <div className="mb-2 flex items-center justify-between">
                 <span className="font-medium">{t.name}</span>
                 <span className="text-xs text-muted">
-                  {unlockLabel(t.priceType, t.price, locked)}
+                  {buyable ? `Buy · ${t.price} coins` : unlockLabel(t.priceType, t.price, locked)}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
