@@ -15,7 +15,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",
     "@race-key/config": "workspace:*",
-    "@types/node": "^22.15.0",
+    "@types/node": "^26.6.5",
     "eslint": "^10.12.0",
     "typescript": "~6.0.3",
     "vitest": "^5.0.4",
