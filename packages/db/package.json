@@ -29,7 +29,7 @@
     "@race-key/config": "workspace:*",
     "@race-key/passages": "workspace:*",
     "@race-key/themes": "workspace:*",
-    "@types/node": "^22.15.0",
+    "@types/node": "^26.6.5",
     "drizzle-kit": "^0.31.11",
     "embedded-postgres": "^18.4.0-beta.17",
     "eslint": "^10.12.0",
