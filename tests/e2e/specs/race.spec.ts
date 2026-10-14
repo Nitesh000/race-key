@@ -6,7 +6,7 @@ test.describe.configure({ timeout: 240_000 });
 test("a quick race fills with bots, never moves the text and pays rewards", async ({ page }) => {
   await page.goto("/race");
   await expect(page).toHaveURL(roomUrl, { timeout: 20_000 });
-  await expect(page.getByText(/Finding racers/)).toBeVisible();
+  await expect(page.locator(".passage")).toBeVisible();
   const passageBox = await page.locator(".passage").boundingBox();
   await expect(page.getByText("Go!")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator(".bg-lane, .bg-lane-you")).toHaveCount(5);
