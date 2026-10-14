@@ -23,30 +23,30 @@ export default async function PassagePage({ params }: Props) {
   const client = toClientPassage(passage);
   const best = hasDb() ? await getPassageBest(passage.id) : [];
   return (
-    <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">
+    <main className="py-10 px-4 mx-auto space-y-6 max-w-3xl">
       <Card>
         <CardTitle>Passage</CardTitle>
         <div className="space-y-4 font-serif text-lg leading-relaxed">
           {passage.contextBefore && <p className="text-muted">{passage.contextBefore}</p>}
-          <p className="rounded-lg border-l-4 border-accent bg-surface-2 px-4 py-2">
+          <p className="py-2 px-4 rounded-lg border-l-4 border-accent bg-surface-2">
             {passage.text}
           </p>
           {passage.contextAfter && <p className="text-muted">{passage.contextAfter}</p>}
         </div>
-        <div className="mt-5 flex gap-2">
+        <div className="flex gap-2 mt-5">
           <Link href={`/practice?p=${passage.id}`} className={buttonClass()}>
             Practice this passage
           </Link>
         </div>
       </Card>
-      <SourceCard passage={client} />
+      <SourceCard passage={client} showDetailsLink={false} />
       <Card>
         <CardTitle>Best on this passage</CardTitle>
         <LeaderboardTable rows={best} empty="Nobody has raced this passage yet." />
       </Card>
       <Card>
         <CardTitle>Source record</CardTitle>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+        <dl className="grid gap-y-1 gap-x-6 text-sm grid-cols-[auto_1fr]">
           <dt className="text-muted">Type</dt>
           <dd className="capitalize">
             {passage.type}

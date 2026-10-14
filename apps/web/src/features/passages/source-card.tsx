@@ -17,16 +17,19 @@ function lifespan(a: ClientPassage["author"]) {
 export function SourceCard({
   passage,
   actions,
+  showDetailsLink = true,
 }: {
   passage: ClientPassage;
   actions?: React.ReactNode;
+  showDetailsLink?: boolean;
 }) {
   const chapter = chapterLabel(passage);
   const span = lifespan(passage.author);
+
   return (
-    <Card className="flex flex-wrap items-start justify-between gap-4">
+    <Card className="flex flex-wrap gap-4 justify-between items-start">
       <div className="space-y-1">
-        <p className="text-xs tracking-wide text-muted uppercase">From the book</p>
+        <p className="text-xs tracking-wide uppercase text-muted">From the book</p>
         <h3 className="text-lg font-semibold">
           <span className="italic">{passage.book.title}</span>{" "}
           <span className="font-normal text-muted">({passage.book.year})</span>
@@ -40,16 +43,18 @@ export function SourceCard({
         </p>
         {chapter && <p className="text-sm text-muted">{chapter}</p>}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {actions}
-        <Link href={`/passages/${passage.id}`} className="text-sm text-accent hover:underline">
-          Passage details
-        </Link>
+        {showDetailsLink ? (
+          <Link href={`/passages/${passage.id}`} className="text-sm hover:underline text-accent">
+            Passage details
+          </Link>
+        ) : null}
         <a
           href={passage.book.url}
           target="_blank"
           rel="noreferrer"
-          className="text-sm text-accent hover:underline"
+          className="text-sm hover:underline text-accent"
         >
           Read the full book
         </a>
