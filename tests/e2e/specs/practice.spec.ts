@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { typePassage } from "./helpers";
+import { passageText, plain, typePassage } from "./helpers";
 
 test("practice a passage with plain keys and see the result and its source", async ({ page }) => {
   await page.goto("/practice");
@@ -47,4 +47,27 @@ test("keystrokes stay fast", async ({ page, browserName }) => {
   durations.sort((a, b) => a - b);
   const p95 = durations[Math.floor(durations.length * 0.95)] ?? 0;
   expect(p95).toBeLessThan(16);
+});
+
+test("word and line delete shortcuts remove mistakes", async ({ page }) => {
+  await page.goto("/practice");
+  await page.getByLabel("Type the passage").focus();
+  const chars = Array.from(await passageText(page));
+  for (const c of chars.slice(0, 3)) await page.keyboard.type(plain(c));
+  const wrong = page.locator('.passage [data-s="w"]');
+  const correct = page.locator('.passage [data-s="c"]');
+
+  for (const shortcut of ["Control+Backspace", "Alt+Backspace", "Meta+Backspace"]) {
+    await page.keyboard.type("~~ ~~~");
+    await expect(wrong).toHaveCount(6);
+    await page.keyboard.press(shortcut);
+    if (shortcut === "Meta+Backspace") {
+      await expect(wrong).toHaveCount(0);
+    } else {
+      await expect(wrong).toHaveCount(3);
+      await page.keyboard.press(shortcut);
+      await expect(wrong).toHaveCount(0);
+    }
+    await expect(correct).toHaveCount(3);
+  }
 });

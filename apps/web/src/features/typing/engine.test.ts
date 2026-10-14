@@ -77,4 +77,27 @@ describe("TypingEngine", () => {
     expect(e.elapsed(0)).toBe(500);
     expect(e.log[0]!.dt).toBe(400);
   });
+
+  it("deletes the last mistyped word with ctrl or option + backspace", () => {
+    const e = new TypingEngine("the cat sat");
+    typeAll(e, "the cxt sxx");
+    expect(e.pos).toBe(5);
+    expect(e.wrong.join("")).toBe("xt sxx");
+    e.deleteWord(5000);
+    expect(e.wrong.join("")).toBe("xt ");
+    e.deleteWord(5100);
+    expect(e.wrong).toEqual([]);
+    expect(e.deleteWord(5200)).toBe(false);
+    typeAll(e, "at sat", 6000);
+    expect(e.done).toBe(true);
+  });
+
+  it("never deletes correct text and clears every mistake with cmd + backspace", () => {
+    const e = new TypingEngine("the cat");
+    typeAll(e, "thx dog");
+    e.deleteAll(5000);
+    expect(e.pos).toBe(2);
+    expect(e.wrong).toEqual([]);
+    expect(e.log.filter((k) => k.kind === "backspace")).toHaveLength(5);
+  });
 });

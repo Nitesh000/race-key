@@ -143,13 +143,15 @@ export function useTypingSession({
       if (!enabled) return;
       const e = engineRef.current;
       if (e.done) return;
-      if (ev.ctrlKey || ev.metaKey || ev.altKey) {
-        if (ev.key === "Backspace") ev.preventDefault();
-        return;
-      }
       const now = performance.now();
       let kind: KeystrokeKind | null = null;
-      if (ev.key === "Backspace") {
+      if (ev.key === "Backspace" && (ev.ctrlKey || ev.altKey || ev.metaKey)) {
+        ev.preventDefault();
+        const erased = ev.metaKey ? e.deleteAll(now) : e.deleteWord(now);
+        if (erased) kind = "backspace";
+      } else if ((ev.ctrlKey || ev.metaKey || ev.altKey) && !ev.getModifierState("AltGraph")) {
+        return;
+      } else if (ev.key === "Backspace") {
         ev.preventDefault();
         if (e.backspace(now)) kind = "backspace";
       } else if (ev.key.length === 1) {

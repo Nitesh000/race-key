@@ -86,6 +86,28 @@ export class TypingEngine {
     return true;
   }
 
+  deleteWord(now: number): boolean {
+    if (this.done || this.wrong.length === 0) return false;
+    let n = 0;
+    while (n < this.wrong.length && this.wrong[this.wrong.length - 1 - n] === " ") n++;
+    while (n < this.wrong.length && this.wrong[this.wrong.length - 1 - n] !== " ") n++;
+    return this.erase(n, now);
+  }
+
+  deleteAll(now: number): boolean {
+    if (this.done || this.wrong.length === 0) return false;
+    return this.erase(this.wrong.length, now);
+  }
+
+  private erase(count: number, now: number) {
+    const dt = this.stamp(now);
+    for (let i = 0; i < count; i++) {
+      this.wrong.pop();
+      this.log.push({ kind: "backspace", key: "\b", pos: this.typedEnd, dt: i === 0 ? dt : 0 });
+    }
+    return count > 0;
+  }
+
   elapsed(now: number) {
     if (this.startedAt === null) return 0;
     return (this.finishedAt ?? now) - this.startedAt;
