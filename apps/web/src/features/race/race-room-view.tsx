@@ -7,9 +7,10 @@ import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChatBox } from "@/features/chat/chat-box";
 import { averageWpm, pushRecent } from "@/features/practice/history";
-import { useSettings } from "@/features/settings/store";
+import { getSettings, useSettings } from "@/features/settings/store";
 import { EmojiTray } from "@/features/taunts/emoji-tray";
 import { createTauntKeys } from "@/features/taunts/taunt-keys";
+import { countdownBeeps } from "@/features/typing/sound";
 import type { TypingEngine } from "@/features/typing/engine";
 import { LiveStats } from "@/features/typing/live-stats";
 import { RaceScreenLayout } from "@/features/typing/race-screen-layout";
@@ -130,6 +131,17 @@ export function RaceRoomView({
 
   const startsAt = room?.startsAt;
   const phase = room?.phase;
+
+  useEffect(() => {
+    if (phase !== "countdown" || !startsAt) return;
+    focus();
+    document
+      .querySelector(".passage")
+      ?.scrollIntoView({ block: "nearest", behavior: settings.reducedMotion ? "auto" : "smooth" });
+    if (!getSettings().countdownSound) return;
+    return countdownBeeps(startsAt - serverNow());
+  }, [phase, startsAt, focus, serverNow, settings.reducedMotion]);
+
   useEffect(() => {
     if (go || !startsAt || (phase !== "countdown" && phase !== "racing")) return;
     const id = setTimeout(

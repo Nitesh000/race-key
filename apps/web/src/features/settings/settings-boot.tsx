@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { unlockAudio } from "@/features/typing/sound";
 import {
   applySettings,
   getSettings,
@@ -17,5 +18,17 @@ export function SettingsBoot({ equipped }: { equipped?: { caret: string; lane: s
     if (caret && lane && (s.caret !== caret || s.lane !== lane)) updateSettings({ caret, lane });
     else applySettings(s);
   }, [caret, lane]);
+  useEffect(() => {
+    const unlock = () => {
+      const s = getSettings();
+      if (s.sound || s.countdownSound) unlockAudio();
+    };
+    window.addEventListener("pointerdown", unlock, { capture: true });
+    window.addEventListener("keydown", unlock, { capture: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock, { capture: true });
+      window.removeEventListener("keydown", unlock, { capture: true });
+    };
+  }, []);
   return null;
 }

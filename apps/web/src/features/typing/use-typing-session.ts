@@ -129,10 +129,9 @@ export function useTypingSession({
     callbacks.current.onFinish?.(e);
   }, []);
 
-  const onKeyDown = useCallback(
-    (ev: React.KeyboardEvent<HTMLInputElement>) => {
-      const native = ev.nativeEvent;
-      if (callbacks.current.interceptKey?.(native)) {
+  const handleKey = useCallback(
+    (ev: KeyboardEvent) => {
+      if (callbacks.current.interceptKey?.(ev)) {
         ev.preventDefault();
         return;
       }
@@ -170,6 +169,26 @@ export function useTypingSession({
     },
     [enabled, paint, status, finish],
   );
+
+  const onKeyDown = useCallback(
+    (ev: React.KeyboardEvent<HTMLInputElement>) => handleKey(ev.nativeEvent),
+    [handleKey],
+  );
+
+  useEffect(() => {
+    const onWindowKey = (ev: KeyboardEvent) => {
+      const input = inputRef.current;
+      if (!input || ev.defaultPrevented || document.activeElement === input) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.key.length !== 1 && ev.key !== "Backspace") return;
+      const target = ev.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, button, a, [contenteditable='true']")) return;
+      input.focus({ preventScroll: true });
+      handleKey(ev);
+    };
+    window.addEventListener("keydown", onWindowKey);
+    return () => window.removeEventListener("keydown", onWindowKey);
+  }, [handleKey]);
 
   const inputProps = {
     ref: inputRef,

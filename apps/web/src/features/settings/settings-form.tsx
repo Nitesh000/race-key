@@ -82,11 +82,18 @@ export function SettingsForm() {
               ]}
             />
           </Row>
-          <Row label="Sound">
+          <Row label="Key sounds">
             <Switch
-              label="Sound"
+              label="Key sounds"
               checked={s.sound}
               onChange={(sound) => updateSettings({ sound })}
+            />
+          </Row>
+          <Row label="Countdown sound">
+            <Switch
+              label="Countdown sound"
+              checked={s.countdownSound}
+              onChange={(countdownSound) => updateSettings({ countdownSound })}
             />
           </Row>
           <Row label="Reduced motion">

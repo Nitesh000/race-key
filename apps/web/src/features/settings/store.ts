@@ -12,6 +12,7 @@ export type Settings = {
   fontSize: number;
   caret: CaretStyle;
   sound: boolean;
+  countdownSound: boolean;
   reducedMotion: boolean;
   track: TrackDisplay;
   muteTaunts: boolean;
@@ -23,6 +24,7 @@ export const defaultSettings: Settings = {
   fontSize: 22,
   caret: "line",
   sound: false,
+  countdownSound: true,
   reducedMotion: false,
   track: "full",
   muteTaunts: false,

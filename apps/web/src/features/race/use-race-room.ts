@@ -9,7 +9,7 @@ import {
 } from "@race-key/shared";
 import { getSettings } from "@/features/settings/store";
 import { TauntStore } from "@/features/taunts/taunt-store";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RaceConnection, type ConnectionStatus } from "./connection";
 import { ProgressStore } from "./progress-store";
 
@@ -85,6 +85,10 @@ export function useRaceRoom(host: string, roomId: string) {
     };
   }, [host, roomId, progress, taunts]);
 
+  const send = useCallback((msg: ClientMessage) => connRef.current?.send(msg), []);
+  const serverNow = useCallback(() => connRef.current?.serverNow() ?? Date.now(), []);
+  const toPerf = useCallback((t: number) => connRef.current?.toPerf(t) ?? performance.now(), []);
+
   return {
     room,
     you,
@@ -96,8 +100,8 @@ export function useRaceRoom(host: string, roomId: string) {
     reported,
     emojis,
     rewards: rewards && rewards.raceId === room?.raceId ? rewards.r : null,
-    send: (msg: ClientMessage) => connRef.current?.send(msg),
-    serverNow: () => connRef.current?.serverNow() ?? Date.now(),
-    toPerf: (t: number) => connRef.current?.toPerf(t) ?? performance.now(),
+    send,
+    serverNow,
+    toPerf,
   };
 }
