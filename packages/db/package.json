@@ -25,16 +25,16 @@
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.9",
+    "@electric-sql/pglite": "^0.5.11",
     "@race-key/config": "workspace:*",
     "@race-key/passages": "workspace:*",
     "@race-key/themes": "workspace:*",
     "@types/node": "^22.15.0",
     "drizzle-kit": "^0.31.11",
     "embedded-postgres": "^18.4.0-beta.17",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   }
 }
